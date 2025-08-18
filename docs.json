@@ -26,67 +26,33 @@
       },
       {
         "tab": "API Reference",
-        "groups": [
-          {
-            "group": "API Overview",
-            "pages": [
-              "api-reference/introduction"
-            ]
-          },
-          {
-            "group": "Core Endpoints",
-            "pages": [
-              "api-reference/meetings",
-              "api-reference/tasks",
-              "api-reference/insights",
-              "api-reference/bets",
-              "api-reference/people",
-              "api-reference/search"
-            ]
-          },
-          {
-            "group": "Integration Endpoints",
-            "pages": [
-              "api-reference/integrations",
-              "api-reference/webhooks"
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "Development",
-        "groups": [
-          {
-            "group": "Architecture",
-            "pages": [
-              "development/mvc-architecture",
-              "development/services",
-              "development/controllers",
-              "development/routes"
-            ]
-          },
-          {
-            "group": "Development Workflow",
-            "pages": [
-              "development/testing",
-              "development/deployment"
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "Integrations",
-        "groups": [
-          {
-            "group": "Setup Guides",
-            "pages": [
-              "integrations/overview",
-              "integrations/calendar",
-              "integrations/slack",
-              "integrations/project-management",
-              "integrations/ai-services"
-            ]
-          }
+        "openapi": "/api-reference/openapi.json",
+        "pages": [
+          "api-reference/introduction",
+          
+          "api-reference/meetings",
+          "api-reference/tasks",
+          "api-reference/insights",
+          "api-reference/bets",
+          "api-reference/people",
+          "api-reference/organizations",
+          
+          "GET /api/meetings",
+          "GET /api/meetings/get-meeting-with-attendees",
+          "GET /api/meetings/get-completed-meetings",
+          "GET /api/meetings/get-future-meetings",
+          "PATCH /api/meetings/update-language",
+          "PATCH /api/meetings/update-summary",
+          "POST /api/meetings/reprocess-meeting",
+          "POST /api/meetings/update-transcript",
+          "POST /api/meetings/share-meeting",
+          "DELETE /api/meetings/delete-meeting",
+          "GET /api/meetings/get-team-members",
+          "GET /api/meetings/get-attendees",
+          "GET /api/meetings/get-events-data",
+          "GET /api/meetings/get-person-meetings",
+          "GET /api/meetings/get-insight-meeting",
+          "POST /api/webhook"
         ]
       }
     ],

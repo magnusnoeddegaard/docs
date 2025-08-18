@@ -1,16 +1,23 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "OpenAPI Plant Store",
-    "description": "A sample API that uses a plant store as an example to demonstrate features in the OpenAPI specification",
-    "license": {
-      "name": "MIT"
+    "title": "Sindre API",
+    "description": "AI-powered meeting intelligence and task management API. Manage calendar meetings, transcriptions, AI-generated summaries, task extraction, and team insights.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Sindre Support",
+      "email": "support@sindre.com",
+      "url": "https://sindre.com"
     },
-    "version": "1.0.0"
+    "license": {
+      "name": "Proprietary",
+      "url": "https://sindre.com/terms"
+    }
   },
   "servers": [
     {
-      "url": "http://sandbox.mintlify.com"
+      "url": "https://api.sindre.com",
+      "description": "Production server"
     }
   ],
   "security": [
@@ -19,36 +26,36 @@
     }
   ],
   "paths": {
-    "/plants": {
+    "/api/meetings": {
       "get": {
-        "description": "Returns all plants from the system that the user has access to",
+        "summary": "Get Meeting",
+        "description": "Retrieve a specific meeting by its event ID.",
+        "operationId": "getMeeting",
+        "tags": ["Meetings"],
         "parameters": [
           {
-            "name": "limit",
+            "name": "eventId",
             "in": "query",
-            "description": "The maximum number of results to return",
+            "description": "The meeting/event ID to retrieve",
+            "required": true,
             "schema": {
-              "type": "integer",
-              "format": "int32"
+              "type": "integer"
             }
           }
         ],
         "responses": {
           "200": {
-            "description": "Plant response",
+            "description": "Meeting retrieved successfully",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Plant"
-                  }
+                  "$ref": "#/components/schemas/Meeting"
                 }
               }
             }
           },
           "400": {
-            "description": "Unexpected error",
+            "description": "Bad request - Event ID is required",
             "content": {
               "application/json": {
                 "schema": {
@@ -56,35 +63,29 @@
                 }
               }
             }
-          }
-        }
-      },
-      "post": {
-        "description": "Creates a new plant in the store",
-        "requestBody": {
-          "description": "Plant to add to the store",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/NewPlant"
-              }
-            }
           },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "plant response",
+          "401": {
+            "description": "Unauthorized - Invalid Supabase user session",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Plant"
+                  "$ref": "#/components/schemas/Error"
                 }
               }
             }
           },
-          "400": {
-            "description": "unexpected error",
+          "404": {
+            "description": "Meeting not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
             "content": {
               "application/json": {
                 "schema": {
@@ -96,28 +97,46 @@
         }
       }
     },
-    "/plants/{id}": {
-      "delete": {
-        "description": "Deletes a single plant based on the ID supplied",
+    "/api/meetings/get-meeting-with-attendees": {
+      "get": {
+        "summary": "Get Meeting with Attendees",
+        "description": "Retrieve a meeting including all attendee information.",
+        "operationId": "getMeetingWithAttendees",
+        "tags": ["Meetings"],
         "parameters": [
           {
-            "name": "id",
-            "in": "path",
-            "description": "ID of plant to delete",
+            "name": "eventId",
+            "in": "query",
+            "description": "The meeting/event ID to retrieve",
             "required": true,
             "schema": {
-              "type": "integer",
-              "format": "int64"
+              "type": "integer"
             }
           }
         ],
         "responses": {
-          "204": {
-            "description": "Plant deleted",
-            "content": {}
+          "200": {
+            "description": "Meeting with attendees retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeetingWithAttendees"
+                }
+              }
+            }
           },
           "400": {
-            "description": "unexpected error",
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Meeting not found",
             "content": {
               "application/json": {
                 "schema": {
@@ -128,25 +147,544 @@
           }
         }
       }
-    }
-  },
-  "webhooks": {
-    "/plant/webhook": {
-      "post": {
-        "description": "Information about a new plant added to the store",
+    },
+    "/api/meetings/get-completed-meetings": {
+      "get": {
+        "summary": "List Completed Meetings",
+        "description": "Get paginated list of completed meetings with summaries.",
+        "operationId": "getCompletedMeetings",
+        "tags": ["Meetings"],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Number of meetings to return (max 100)",
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Number of meetings to skip for pagination",
+            "schema": {
+              "type": "integer",
+              "default": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Completed meetings retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompletedMeetingsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/meetings/get-future-meetings": {
+      "get": {
+        "summary": "List Future Meetings",
+        "description": "Get upcoming meetings from calendar sync.",
+        "operationId": "getFutureMeetings",
+        "tags": ["Meetings"],
+        "parameters": [
+          {
+            "name": "nbDays",
+            "in": "query",
+            "description": "Number of days ahead to look for meetings",
+            "schema": {
+              "type": "integer",
+              "default": 7
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Future meetings retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Meeting"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/meetings/update-language": {
+      "patch": {
+        "summary": "Update Meeting Language",
+        "description": "Change the language setting for a meeting's processing.",
+        "operationId": "updateMeetingLanguage",
+        "tags": ["Meetings"],
         "requestBody": {
-          "description": "Plant added to the store",
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/NewPlant"
+                "type": "object",
+                "required": ["eventId", "language"],
+                "properties": {
+                  "eventId": {
+                    "type": "integer",
+                    "description": "The meeting ID to update"
+                  },
+                  "language": {
+                    "type": "string",
+                    "description": "Language code (e.g., 'en', 'es', 'fr', 'de')",
+                    "examples": ["en", "es", "fr", "de"]
+                  }
+                }
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "Return a 200 status to indicate that the data was received successfully"
+            "description": "Language updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/meetings/update-summary": {
+      "patch": {
+        "summary": "Update Meeting Summary",
+        "description": "Update the AI-generated summary and action points.",
+        "operationId": "updateMeetingSummary",
+        "tags": ["Meetings"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["eventId", "newSummary"],
+                "properties": {
+                  "eventId": {
+                    "type": "integer",
+                    "description": "The meeting ID to update"
+                  },
+                  "newSummary": {
+                    "$ref": "#/components/schemas/MeetingSummary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Summary updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/meetings/reprocess-meeting": {
+      "post": {
+        "summary": "Reprocess Meeting",
+        "description": "Trigger reprocessing of a meeting with updated AI models.",
+        "operationId": "reprocessMeeting",
+        "tags": ["Meetings"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["botId"],
+                "properties": {
+                  "botId": {
+                    "type": "string",
+                    "description": "The Recall bot ID for the meeting recording"
+                  },
+                  "languageCode": {
+                    "type": "string",
+                    "description": "Language code for processing (defaults to meeting's current language)"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Reprocessing initiated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/meetings/update-transcript": {
+      "post": {
+        "summary": "Update Meeting Transcript",
+        "description": "Update the transcript for a meeting.",
+        "operationId": "updateMeetingTranscript",
+        "tags": ["Meetings"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["botId", "transcript", "languageCode"],
+                "properties": {
+                  "botId": {
+                    "type": "string",
+                    "description": "The Recall bot ID for the meeting"
+                  },
+                  "transcript": {
+                    "$ref": "#/components/schemas/Transcript"
+                  },
+                  "languageCode": {
+                    "type": "string",
+                    "description": "Language code for the transcript"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Transcript updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/meetings/share-meeting": {
+      "post": {
+        "summary": "Share Meeting",
+        "description": "Share a meeting with team members or spaces.",
+        "operationId": "shareMeeting",
+        "tags": ["Meetings"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["eventId", "userIds"],
+                "properties": {
+                  "eventId": {
+                    "type": "integer",
+                    "description": "The meeting ID to share"
+                  },
+                  "userIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Array of user IDs to share with"
+                  },
+                  "spaceId": {
+                    "type": "string",
+                    "description": "Optional space ID for organization"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Meeting shared successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/meetings/delete-meeting": {
+      "delete": {
+        "summary": "Delete Meeting",
+        "description": "Permanently delete a meeting and all associated data.",
+        "operationId": "deleteMeeting",
+        "tags": ["Meetings"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["eventId"],
+                "properties": {
+                  "eventId": {
+                    "type": "integer",
+                    "description": "The meeting ID to delete"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Meeting deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Meeting not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/meetings/get-team-members": {
+      "get": {
+        "summary": "Get Team Members",
+        "description": "Get list of team members for sharing meetings.",
+        "operationId": "getTeamMembers",
+        "tags": ["Meetings"],
+        "responses": {
+          "200": {
+            "description": "Team members retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamMembersResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/meetings/get-attendees": {
+      "get": {
+        "summary": "Get Meeting Attendees",
+        "description": "Get attendee list for a specific meeting.",
+        "operationId": "getMeetingAttendees",
+        "tags": ["Meetings"],
+        "parameters": [
+          {
+            "name": "eventId",
+            "in": "query",
+            "description": "The meeting/event ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Attendees retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttendeesResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/meetings/get-events-data": {
+      "get": {
+        "summary": "Get Events Data by Bot IDs",
+        "description": "Retrieve meeting information for multiple bot IDs.",
+        "operationId": "getEventsData",
+        "tags": ["Meetings"],
+        "parameters": [
+          {
+            "name": "botIds",
+            "in": "query",
+            "description": "Comma-separated list of bot IDs",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Events data retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Meeting"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/meetings/get-person-meetings": {
+      "get": {
+        "summary": "Get Person Meetings",
+        "description": "Get all meetings for a specific person by bot IDs.",
+        "operationId": "getPersonMeetings",
+        "tags": ["Meetings"],
+        "parameters": [
+          {
+            "name": "botIds",
+            "in": "query",
+            "description": "Comma-separated list of bot IDs",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Person meetings retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Meeting"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/meetings/get-insight-meeting": {
+      "get": {
+        "summary": "Get Meeting for Insights",
+        "description": "Get meeting data specifically for insights generation.",
+        "operationId": "getInsightMeeting",
+        "tags": ["Meetings"],
+        "parameters": [
+          {
+            "name": "sourceBotId",
+            "in": "query",
+            "description": "The bot ID for insights analysis",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Insight meeting retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Meeting"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/webhook": {
+      "post": {
+        "summary": "Webhook Endpoint",
+        "description": "Receive webhooks from external services",
+        "operationId": "webhook",
+        "tags": ["Webhooks"],
+        "requestBody": {
+          "description": "Webhook payload",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Webhook processed successfully"
           }
         }
       }
@@ -154,55 +692,254 @@
   },
   "components": {
     "schemas": {
-      "Plant": {
-        "required": [
-          "name"
-        ],
+      "Meeting": {
         "type": "object",
         "properties": {
-          "name": {
-            "description": "The name of the plant",
-            "type": "string"
+          "id": {
+            "type": "integer",
+            "description": "Unique meeting identifier"
           },
-          "tag": {
-            "description": "Tag to specify the type",
-            "type": "string"
+          "calendar_event_title": {
+            "type": "string",
+            "description": "Meeting title from calendar event"
+          },
+          "recall_bot_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Array of bot IDs used for recording"
+          },
+          "start_date_time": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Meeting start time"
+          },
+          "end_date_time": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Meeting end time"
+          },
+          "time_zone": {
+            "type": "string",
+            "description": "Meeting timezone"
+          },
+          "meeting_completed": {
+            "type": "boolean",
+            "description": "Whether the meeting has ended"
+          },
+          "meeting_processed": {
+            "type": "boolean",
+            "description": "Whether AI processing is complete"
+          },
+          "is_transcript_ready": {
+            "type": "boolean",
+            "description": "Whether transcript is available"
+          },
+          "meeting_summary_and_action_points": {
+            "$ref": "#/components/schemas/MeetingSummary"
+          },
+          "transcript": {
+            "$ref": "#/components/schemas/Transcript"
+          },
+          "meeting_language": {
+            "type": "string",
+            "description": "Language code for the meeting"
+          },
+          "space_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Workspace/team ID"
+          },
+          "user_calendar_sync_id": {
+            "type": "string",
+            "description": "Calendar sync identifier"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
-      "NewPlant": {
+      "MeetingWithAttendees": {
         "allOf": [
           {
-            "$ref": "#/components/schemas/Plant"
+            "$ref": "#/components/schemas/Meeting"
           },
           {
-            "required": [
-              "id"
-            ],
             "type": "object",
             "properties": {
-              "id": {
-                "description": "Identification number of the plant",
-                "type": "integer",
-                "format": "int64"
+              "attendees": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Attendee"
+                }
               }
             }
           }
         ]
       },
-      "Error": {
-        "required": [
-          "error",
-          "message"
-        ],
+      "MeetingSummary": {
         "type": "object",
         "properties": {
-          "error": {
-            "type": "integer",
-            "format": "int32"
+          "summary": {
+            "type": "string",
+            "description": "Meeting summary text"
+          },
+          "action_items": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "List of action items"
+          }
+        }
+      },
+      "Transcript": {
+        "type": "object",
+        "properties": {
+          "speakers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Speaker"
+            }
+          }
+        }
+      },
+      "Speaker": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Speaker name"
+          },
+          "segments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TranscriptSegment"
+            }
+          }
+        }
+      },
+      "TranscriptSegment": {
+        "type": "object",
+        "properties": {
+          "start": {
+            "type": "number",
+            "description": "Start time in seconds"
+          },
+          "end": {
+            "type": "number",
+            "description": "End time in seconds"
+          },
+          "text": {
+            "type": "string",
+            "description": "Transcript text"
+          }
+        }
+      },
+      "Attendee": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Attendee email"
+          },
+          "name": {
+            "type": "string",
+            "description": "Attendee name"
+          }
+        }
+      },
+      "CompletedMeetingsResponse": {
+        "type": "object",
+        "properties": {
+          "events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MeetingWithAttendees"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/Pagination"
+          }
+        }
+      },
+      "Pagination": {
+        "type": "object",
+        "properties": {
+          "offset": {
+            "type": "integer"
+          },
+          "limit": {
+            "type": "integer"
+          },
+          "total": {
+            "type": "integer"
+          },
+          "hasMore": {
+            "type": "boolean"
+          }
+        }
+      },
+      "TeamMembersResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "teamMembers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "User ID"
+                },
+                "email": {
+                  "type": "string",
+                  "format": "email"
+                }
+              }
+            }
+          }
+        }
+      },
+      "AttendeesResponse": {
+        "type": "object",
+        "properties": {
+          "attendees": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Attendee"
+            }
+          }
+        }
+      },
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
           },
           "message": {
             "type": "string"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "required": ["error"],
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Error message"
           }
         }
       }
@@ -210,7 +947,8 @@
     "securitySchemes": {
       "bearerAuth": {
         "type": "http",
-        "scheme": "bearer"
+        "scheme": "bearer",
+        "description": "JWT token from Supabase authentication"
       }
     }
   }
