@@ -7,6 +7,73 @@ description: "Deep dive into Sindre's architecture, components, and data flow"
 
 Sindre is designed as a scalable, AI-powered platform for meeting intelligence and product management. This guide covers the high-level architecture, component interactions, and technical design decisions.
 
+## Key Features
+
+Sindre provides comprehensive meeting intelligence and productivity tools powered by advanced AI and seamless integrations:
+
+<CardGroup cols={2}>
+  <Card title="AI-Powered Meeting Intelligence" icon="brain">
+    **Smart Audio Processing**
+    - Automatic transcription with speaker diarization
+    - Real-time meeting summaries and action items
+    - Context-aware insight generation
+    - Smart task extraction from conversations
+  </Card>
+  <Card title="Task Management & Collaboration" icon="list-check">
+    **Intelligent Task Workflows**
+    - AI-extracted and manual task creation
+    - Smart similarity detection and task merging
+    - Assignment management with notifications
+    - Threaded comments with @mentions
+  </Card>
+  <Card title="Strategic Bet Tracking" icon="target">
+    **High-Level Initiative Management**
+    - Strategic goal and bet tracking
+    - Progress monitoring and success criteria
+    - Milestone and timeline management
+    - Cross-meeting strategic alignment
+  </Card>
+  <Card title="Semantic Search & Discovery" icon="search">
+    **Vector-Powered Knowledge Base**
+    - Semantic search across all meeting content
+    - Contextual query understanding
+    - Cross-meeting insight discovery
+    - AI-powered content recommendations
+  </Card>
+</CardGroup>
+
+### Integration Ecosystem
+
+<AccordionGroup>
+  <Accordion icon="calendar" title="Calendar & Meeting Platforms">
+    - **Google Calendar**: Automatic meeting sync and bot deployment
+    - **Microsoft Teams**: Native integration with Teams meetings
+    - **Recall API**: Meeting bot management and recording
+    - **Real-time Webhooks**: Instant processing notifications
+  </Accordion>
+  
+  <Accordion icon="comments" title="Communication Tools">
+    - **Slack Integration**: Conversational AI bot for queries
+    - **Email Notifications**: Task assignments and updates
+    - **Thread Management**: Contextual conversation tracking
+    - **Mention System**: @-based notifications and references
+  </Accordion>
+  
+  <Accordion icon="puzzle-piece" title="Project Management">
+    - **Asana Integration**: Bidirectional task synchronization
+    - **Linear Integration**: Issue tracking and project alignment
+    - **Workspace Management**: Multi-tenant space organization
+    - **Custom Workflows**: Flexible task and bet management
+  </Accordion>
+  
+  <Accordion icon="users" title="People & Organization">
+    - **Contact Management**: People and organization tracking
+    - **Relationship Mapping**: Social graph and interaction analysis
+    - **Participant Identification**: Automatic speaker recognition
+    - **Role-Based Access**: Secure multi-tenant data isolation
+  </Accordion>
+</AccordionGroup>
+
 ## High-Level Architecture
 
 The Sindre platform consists of three main components that work together to provide comprehensive meeting intelligence:

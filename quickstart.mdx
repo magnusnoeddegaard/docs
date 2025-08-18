@@ -7,29 +7,75 @@ description: "Get up and running with the Sindre API in minutes"
 
 This guide will walk you through making your first API call to Sindre, from authentication to processing your first meeting.
 
+## What is Sindre?
+
+Sindre transforms your meeting recordings into actionable insights using advanced AI. Key capabilities include:
+
+<CardGroup cols={2}>
+  <Card title="AI Meeting Processing" icon="brain">
+    Automatic transcription with speaker diarization, smart summaries, and task extraction
+  </Card>
+  <Card title="Task Management" icon="list-check">
+    AI-powered task detection with similarity matching and collaboration features
+  </Card>
+  <Card title="Strategic Tracking" icon="target">
+    High-level bet and initiative management with progress monitoring
+  </Card>
+  <Card title="Semantic Search" icon="search">
+    Vector-powered search across all your meeting content and insights
+  </Card>
+</CardGroup>
+
 ## Prerequisites
 
 Before you start, make sure you have:
-- A Sindre account and API key
+- A Supabase account and Sindre workspace access
 - Node.js 18+ or your preferred HTTP client
 - An audio file to test with (MP3, WAV, or M4A format)
 
 ## Step 1: Authentication
 
-All API requests require authentication using a bearer token. You'll get this token when you create your Sindre account.
+Sindre uses Supabase JWT tokens for authentication. You'll need to authenticate with Supabase first to get a token.
 
-```javascript
-const SINDRE_API_KEY = 'your_api_key_here';
-const BASE_URL = 'https://api.sindre.com';
-
-const headers = {
-  'Authorization': `Bearer ${SINDRE_API_KEY}`,
-  'Content-Type': 'application/json'
-};
-```
+<Tabs>
+  <Tab title="Get JWT Token">
+    ```javascript
+    import { createClient } from '@supabase/supabase-js';
+    
+    const supabase = createClient(
+      'https://your-project.supabase.co',
+      'your-anon-key'
+    );
+    
+    // Sign in to get JWT token
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: 'your-email@example.com',
+      password: 'your-password'
+    });
+    
+    const jwtToken = data.session?.access_token;
+    ```
+  </Tab>
+  <Tab title="Use Token in API Calls">
+    ```javascript
+    const BASE_URL = 'https://api.sindre.com';
+    
+    const headers = {
+      'Authorization': `Bearer ${jwtToken}`,
+      'Content-Type': 'application/json'
+    };
+    
+    // Now you can make authenticated API calls
+    const response = await fetch(`${BASE_URL}/api/meetings`, {
+      method: 'GET',
+      headers
+    });
+    ```
+  </Tab>
+</Tabs>
 
 <Warning>
-  Keep your API key secure and never expose it in client-side code. Use environment variables in production.
+  Keep your JWT token secure and never expose it in client-side code. Tokens expire and need to be refreshed periodically using Supabase's refresh token mechanism.
 </Warning>
 
 ## Step 2: Create Your First Meeting
@@ -74,7 +120,7 @@ Once you have a meeting, upload an audio file for transcription and analysis.
       const response = await fetch(`${BASE_URL}/api/file-upload`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${SINDRE_API_KEY}`,
+          'Authorization': `Bearer ${jwtToken}`,
           ...form.getHeaders()
         },
         body: form
@@ -89,7 +135,7 @@ Once you have a meeting, upload an audio file for transcription and analysis.
   <Tab title="cURL">
     ```bash
     curl -X POST \
-      -H "Authorization: Bearer your_api_key_here" \
+      -H "Authorization: Bearer your_jwt_token_here" \
       -F "file=@/path/to/your/audio.mp3" \
       -F "meetingId=your_meeting_id" \
       https://api.sindre.com/api/file-upload
@@ -102,7 +148,7 @@ Once you have a meeting, upload an audio file for transcription and analysis.
     def upload_audio(meeting_id, audio_file_path):
         url = f"{BASE_URL}/api/file-upload"
         headers = {
-            'Authorization': f'Bearer {SINDRE_API_KEY}'
+            'Authorization': f'Bearer {jwt_token}'
         }
         
         files = {
@@ -272,7 +318,7 @@ Now that you've successfully processed your first meeting, explore these advance
 
 <AccordionGroup>
   <Accordion icon="warning" title="Authentication Error (401)">
-    Make sure your API key is valid and included in the `Authorization` header as `Bearer your_api_key`.
+    Make sure your JWT token is valid and not expired. Include it in the `Authorization` header as `Bearer your_jwt_token`. If expired, refresh the token using Supabase's refresh mechanism.
   </Accordion>
   <Accordion icon="clock" title="Processing Takes Too Long">
     Processing time depends on audio length and complexity. Typical processing takes 2-3x the audio duration.

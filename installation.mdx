@@ -7,8 +7,60 @@ description: "Complete guide to installing and configuring the Sindre API backen
 
 This guide covers installing and configuring your own instance of the Sindre API backend for development or production use.
 
+## What You'll Build
+
+Sindre is an AI-powered meeting intelligence platform with comprehensive capabilities:
+
+<CardGroup cols={2}>
+  <Card title="Smart Meeting Processing" icon="microphone">
+    **Audio Intelligence**
+    - Automatic transcription with speaker diarization
+    - Real-time meeting summaries and action items
+    - Context-aware insight generation
+    - Smart task extraction from conversations
+  </Card>
+  <Card title="Task & Collaboration Hub" icon="users">
+    **Team Productivity**
+    - AI-extracted and manual task creation
+    - Smart similarity detection and task merging
+    - Threaded comments with @mentions
+    - Assignment management with notifications
+  </Card>
+  <Card title="Strategic Initiative Tracking" icon="target">
+    **High-Level Management**
+    - Strategic bet and goal tracking
+    - Progress monitoring with success criteria
+    - Cross-meeting strategic alignment
+    - Initiative timeline management
+  </Card>
+  <Card title="Knowledge Discovery" icon="search">
+    **Semantic Intelligence**
+    - Vector-powered search across all content
+    - Contextual query understanding
+    - Cross-meeting insight discovery
+    - AI-powered content recommendations
+  </Card>
+</CardGroup>
+
+### Integration Ecosystem
+
+<AccordionGroup>
+  <Accordion icon="calendar" title="Calendar & Meeting Platforms">
+    - Google Calendar automatic sync and bot deployment
+    - Microsoft Teams native meeting integration
+    - Recall API for meeting bot management
+    - Real-time webhook processing notifications
+  </Accordion>
+  <Accordion icon="comments" title="Communication & Collaboration">
+    - Slack bot for conversational queries
+    - Email notifications for assignments
+    - Asana and Linear bidirectional task sync
+    - Multi-tenant workspace management
+  </Accordion>
+</AccordionGroup>
+
 <Warning>
-  This guide is for self-hosted deployments. If you're using Sindre's hosted API, you only need an API key from your dashboard.
+  This guide is for self-hosted deployments. If you're using Sindre's hosted service, you only need to authenticate through Supabase - no additional setup required.
 </Warning>
 
 ## Prerequisites
@@ -227,7 +279,7 @@ Test that all components are working:
   <Tab title="Database Connection">
     ```bash
     curl -X POST http://localhost:8080/api/meetings \
-      -H "Authorization: Bearer your_test_token" \
+      -H "Authorization: Bearer your_supabase_jwt_token" \
       -H "Content-Type: application/json" \
       -d '{"title": "Test Meeting"}'
     ```
@@ -236,7 +288,7 @@ Test that all components are working:
     ```bash
     # This will test OpenAI connectivity
     curl -X POST http://localhost:8080/api/query/llm \
-      -H "Authorization: Bearer your_test_token" \
+      -H "Authorization: Bearer your_supabase_jwt_token" \
       -H "Content-Type: application/json" \
       -d '{"query": "Hello, world!"}'
     ```
