@@ -1,0 +1,2787 @@
+{
+    "bet_tasks": [
+        {
+            "column_name": "bet_id",
+            "data_type": "uuid",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "task_id",
+            "data_type": "uuid",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "created_at",
+            "data_type": "timestamp with time zone",
+            "is_nullable": false,
+            "column_default": "now()",
+            "constraints": []
+        },
+        {
+            "column_name": "updated_at",
+            "data_type": "timestamp with time zone",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        }
+    ],
+    "bet_tasks_suggestions": [
+        {
+            "column_name": "bet_id",
+            "data_type": "uuid",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "task_id",
+            "data_type": "uuid",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        }
+    ],
+    "bets": [
+        {
+            "column_name": "id",
+            "data_type": "uuid",
+            "is_nullable": false,
+            "column_default": "gen_random_uuid()",
+            "constraints": []
+        },
+        {
+            "column_name": "created_at",
+            "data_type": "timestamp with time zone",
+            "is_nullable": false,
+            "column_default": "now()",
+            "constraints": []
+        },
+        {
+            "column_name": "name",
+            "data_type": "text",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "description",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "status_id",
+            "data_type": "bigint",
+            "is_nullable": false,
+            "column_default": "'1'::bigint",
+            "constraints": []
+        },
+        {
+            "column_name": "priority_id",
+            "data_type": "bigint",
+            "is_nullable": false,
+            "column_default": "'1'::bigint",
+            "constraints": []
+        },
+        {
+            "column_name": "icon_id",
+            "data_type": "bigint",
+            "is_nullable": false,
+            "column_default": "'1'::bigint",
+            "constraints": []
+        },
+        {
+            "column_name": "target_date",
+            "data_type": "timestamp with time zone",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "owner_id",
+            "data_type": "uuid",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        }
+    ],
+    "bets_icons": [
+        {
+            "column_name": "id",
+            "data_type": "bigint",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "name",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        }
+    ],
+    "bets_priorities": [
+        {
+            "column_name": "id",
+            "data_type": "bigint",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "name",
+            "data_type": "text",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "description",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        }
+    ],
+    "bets_statuses": [
+        {
+            "column_name": "id",
+            "data_type": "bigint",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "name",
+            "data_type": "text",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "description",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        }
+    ],
+    "checkpoint_blobs": [
+        {
+            "column_name": "thread_id",
+            "data_type": "text",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "checkpoint_ns",
+            "data_type": "text",
+            "is_nullable": false,
+            "column_default": "''::text",
+            "constraints": []
+        },
+        {
+            "column_name": "channel",
+            "data_type": "text",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "version",
+            "data_type": "text",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "type",
+            "data_type": "text",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "blob",
+            "data_type": "bytea",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        }
+    ],
+    "checkpoint_migrations": [
+        {
+            "column_name": "v",
+            "data_type": "integer",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        }
+    ],
+    "checkpoint_writes": [
+        {
+            "column_name": "thread_id",
+            "data_type": "text",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "checkpoint_ns",
+            "data_type": "text",
+            "is_nullable": false,
+            "column_default": "''::text",
+            "constraints": []
+        },
+        {
+            "column_name": "checkpoint_id",
+            "data_type": "text",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "task_id",
+            "data_type": "text",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "idx",
+            "data_type": "integer",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "channel",
+            "data_type": "text",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "type",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "blob",
+            "data_type": "bytea",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        }
+    ],
+    "checkpoints": [
+        {
+            "column_name": "thread_id",
+            "data_type": "text",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "checkpoint_ns",
+            "data_type": "text",
+            "is_nullable": false,
+            "column_default": "''::text",
+            "constraints": []
+        },
+        {
+            "column_name": "checkpoint_id",
+            "data_type": "text",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "parent_checkpoint_id",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "type",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "checkpoint",
+            "data_type": "jsonb",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "metadata",
+            "data_type": "jsonb",
+            "is_nullable": false,
+            "column_default": "'{}'::jsonb",
+            "constraints": []
+        }
+    ],
+    "companies": [
+        {
+            "column_name": "created_at",
+            "data_type": "timestamp with time zone",
+            "is_nullable": false,
+            "column_default": "now()",
+            "constraints": []
+        },
+        {
+            "column_name": "company_id",
+            "data_type": "bigint",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "name",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        }
+    ],
+    "insight_priorities": [
+        {
+            "column_name": "id",
+            "data_type": "bigint",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "name",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        }
+    ],
+    "insight_statuses": [
+        {
+            "column_name": "id",
+            "data_type": "bigint",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "name",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        }
+    ],
+    "insight_task": [
+        {
+            "column_name": "insight_id",
+            "data_type": "uuid",
+            "is_nullable": false,
+            "column_default": "auth.uid()",
+            "constraints": []
+        },
+        {
+            "column_name": "task_id",
+            "data_type": "uuid",
+            "is_nullable": false,
+            "column_default": "auth.uid()",
+            "constraints": []
+        },
+        {
+            "column_name": "created_at",
+            "data_type": "timestamp with time zone",
+            "is_nullable": false,
+            "column_default": "(now() AT TIME ZONE 'utc'::text)",
+            "constraints": []
+        }
+    ],
+    "insight_types": [
+        {
+            "column_name": "id",
+            "data_type": "bigint",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "name",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "description",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        }
+    ],
+    "insights": [
+        {
+            "column_name": "id",
+            "data_type": "uuid",
+            "is_nullable": false,
+            "column_default": "gen_random_uuid()",
+            "constraints": []
+        },
+        {
+            "column_name": "created_at",
+            "data_type": "timestamp with time zone",
+            "is_nullable": true,
+            "column_default": "now()",
+            "constraints": []
+        },
+        {
+            "column_name": "updated_at",
+            "data_type": "timestamp with time zone",
+            "is_nullable": true,
+            "column_default": "(now() AT TIME ZONE 'utc'::text)",
+            "constraints": []
+        },
+        {
+            "column_name": "user_id",
+            "data_type": "uuid",
+            "is_nullable": true,
+            "column_default": "auth.uid()",
+            "constraints": []
+        },
+        {
+            "column_name": "space_id",
+            "data_type": "uuid",
+            "is_nullable": true,
+            "column_default": "auth.uid()",
+            "constraints": []
+        },
+        {
+            "column_name": "name",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "direct_quote",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "type_id",
+            "data_type": "bigint",
+            "is_nullable": true,
+            "column_default": "'3'::bigint",
+            "constraints": []
+        },
+        {
+            "column_name": "priority_id",
+            "data_type": "bigint",
+            "is_nullable": true,
+            "column_default": "'1'::bigint",
+            "constraints": []
+        },
+        {
+            "column_name": "status_id",
+            "data_type": "bigint",
+            "is_nullable": true,
+            "column_default": "'1'::bigint",
+            "constraints": []
+        },
+        {
+            "column_name": "details",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "person_id",
+            "data_type": "uuid",
+            "is_nullable": true,
+            "column_default": "auth.uid()",
+            "constraints": []
+        },
+        {
+            "column_name": "source_bot_id",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "disabled",
+            "data_type": "boolean",
+            "is_nullable": false,
+            "column_default": "false",
+            "constraints": []
+        }
+    ],
+    "integrations": [
+        {
+            "column_name": "id",
+            "data_type": "bigint",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "created_at",
+            "data_type": "timestamp with time zone",
+            "is_nullable": false,
+            "column_default": "now()",
+            "constraints": []
+        },
+        {
+            "column_name": "name",
+            "data_type": "text",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "data",
+            "data_type": "jsonb",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "updated_at",
+            "data_type": "timestamp with time zone",
+            "is_nullable": false,
+            "column_default": "now()",
+            "constraints": []
+        },
+        {
+            "column_name": "user_id",
+            "data_type": "uuid",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "other_data_integration",
+            "data_type": "jsonb",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "ticket_creation_template",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "calendar_sync_user_id",
+            "data_type": "uuid",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        }
+    ],
+    "keys": [
+        {
+            "column_name": "id",
+            "data_type": "bigint",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "created_at",
+            "data_type": "timestamp with time zone",
+            "is_nullable": false,
+            "column_default": "now()",
+            "constraints": []
+        },
+        {
+            "column_name": "portal_id",
+            "data_type": "bigint",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "token",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "index",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": "'hubspot-test-acc'::text",
+            "constraints": []
+        },
+        {
+            "column_name": "flowise",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": "'cfc1ba7a-7511-42d8-a499-8e7a32ffaa88'::text",
+            "constraints": []
+        },
+        {
+            "column_name": "enabled",
+            "data_type": "boolean",
+            "is_nullable": false,
+            "column_default": "true",
+            "constraints": []
+        }
+    ],
+    "lightrag_doc_chunks": [
+        {
+            "column_name": "id",
+            "data_type": "character varying",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "workspace",
+            "data_type": "character varying",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "full_doc_id",
+            "data_type": "character varying",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "chunk_order_index",
+            "data_type": "integer",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "tokens",
+            "data_type": "integer",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "content",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "content_vector",
+            "data_type": "USER-DEFINED",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "file_path",
+            "data_type": "character varying",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "create_time",
+            "data_type": "timestamp with time zone",
+            "is_nullable": true,
+            "column_default": "CURRENT_TIMESTAMP",
+            "constraints": []
+        },
+        {
+            "column_name": "update_time",
+            "data_type": "timestamp with time zone",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        }
+    ],
+    "lightrag_doc_full": [
+        {
+            "column_name": "id",
+            "data_type": "character varying",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "workspace",
+            "data_type": "character varying",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "doc_name",
+            "data_type": "character varying",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "content",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "meta",
+            "data_type": "jsonb",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "create_time",
+            "data_type": "timestamp without time zone",
+            "is_nullable": true,
+            "column_default": "CURRENT_TIMESTAMP",
+            "constraints": []
+        },
+        {
+            "column_name": "update_time",
+            "data_type": "timestamp without time zone",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        }
+    ],
+    "lightrag_doc_status": [
+        {
+            "column_name": "workspace",
+            "data_type": "character varying",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "id",
+            "data_type": "character varying",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "content",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "content_summary",
+            "data_type": "character varying",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "content_length",
+            "data_type": "integer",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "chunks_count",
+            "data_type": "integer",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "status",
+            "data_type": "character varying",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "file_path",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "created_at",
+            "data_type": "timestamp without time zone",
+            "is_nullable": true,
+            "column_default": "CURRENT_TIMESTAMP",
+            "constraints": []
+        },
+        {
+            "column_name": "updated_at",
+            "data_type": "timestamp without time zone",
+            "is_nullable": true,
+            "column_default": "CURRENT_TIMESTAMP",
+            "constraints": []
+        }
+    ],
+    "lightrag_llm_cache": [
+        {
+            "column_name": "workspace",
+            "data_type": "character varying",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "id",
+            "data_type": "character varying",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "mode",
+            "data_type": "character varying",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "original_prompt",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "return_value",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "create_time",
+            "data_type": "timestamp without time zone",
+            "is_nullable": true,
+            "column_default": "CURRENT_TIMESTAMP",
+            "constraints": []
+        },
+        {
+            "column_name": "update_time",
+            "data_type": "timestamp without time zone",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        }
+    ],
+    "lightrag_vdb_entity": [
+        {
+            "column_name": "id",
+            "data_type": "character varying",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "workspace",
+            "data_type": "character varying",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "entity_name",
+            "data_type": "character varying",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "entity_type",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "content",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "content_vector",
+            "data_type": "USER-DEFINED",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "create_time",
+            "data_type": "timestamp with time zone",
+            "is_nullable": true,
+            "column_default": "CURRENT_TIMESTAMP",
+            "constraints": []
+        },
+        {
+            "column_name": "update_time",
+            "data_type": "timestamp with time zone",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "chunk_ids",
+            "data_type": "ARRAY",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "file_path",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "entity_email",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "source_meeting_id",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        }
+    ],
+    "lightrag_vdb_relation": [
+        {
+            "column_name": "id",
+            "data_type": "character varying",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "workspace",
+            "data_type": "character varying",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "source_id",
+            "data_type": "character varying",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "target_id",
+            "data_type": "character varying",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "content",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "content_vector",
+            "data_type": "USER-DEFINED",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "create_time",
+            "data_type": "timestamp with time zone",
+            "is_nullable": true,
+            "column_default": "CURRENT_TIMESTAMP",
+            "constraints": []
+        },
+        {
+            "column_name": "update_time",
+            "data_type": "timestamp with time zone",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "chunk_ids",
+            "data_type": "ARRAY",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "file_path",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        }
+    ],
+    "organization_types": [
+        {
+            "column_name": "id",
+            "data_type": "bigint",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "name",
+            "data_type": "text",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "description",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        }
+    ],
+    "organizations": [
+        {
+            "column_name": "id",
+            "data_type": "uuid",
+            "is_nullable": false,
+            "column_default": "gen_random_uuid()",
+            "constraints": []
+        },
+        {
+            "column_name": "created_at",
+            "data_type": "timestamp with time zone",
+            "is_nullable": false,
+            "column_default": "now()",
+            "constraints": []
+        },
+        {
+            "column_name": "name",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "type_id",
+            "data_type": "bigint",
+            "is_nullable": true,
+            "column_default": "'1'::bigint",
+            "constraints": []
+        },
+        {
+            "column_name": "domain",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "source",
+            "data_type": "jsonb",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "space_id",
+            "data_type": "uuid",
+            "is_nullable": true,
+            "column_default": "auth.uid()",
+            "constraints": []
+        },
+        {
+            "column_name": "user_id",
+            "data_type": "uuid",
+            "is_nullable": true,
+            "column_default": "auth.uid()",
+            "constraints": []
+        }
+    ],
+    "people": [
+        {
+            "column_name": "id",
+            "data_type": "uuid",
+            "is_nullable": false,
+            "column_default": "gen_random_uuid()",
+            "constraints": []
+        },
+        {
+            "column_name": "created_at",
+            "data_type": "timestamp with time zone",
+            "is_nullable": false,
+            "column_default": "now()",
+            "constraints": []
+        },
+        {
+            "column_name": "full_name",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "email",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "title",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": "''::text",
+            "constraints": []
+        },
+        {
+            "column_name": "outside_organisation_id",
+            "data_type": "uuid",
+            "is_nullable": true,
+            "column_default": "auth.uid()",
+            "constraints": []
+        },
+        {
+            "column_name": "space_id",
+            "data_type": "uuid",
+            "is_nullable": true,
+            "column_default": "auth.uid()",
+            "constraints": []
+        },
+        {
+            "column_name": "user_id",
+            "data_type": "uuid",
+            "is_nullable": true,
+            "column_default": "auth.uid()",
+            "constraints": []
+        },
+        {
+            "column_name": "meetings_title",
+            "data_type": "ARRAY",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "phone_number",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "content",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        }
+    ],
+    "people_suggestions": [
+        {
+            "column_name": "people_id",
+            "data_type": "uuid",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "suggested_id",
+            "data_type": "uuid",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        }
+    ],
+    "prompts": [
+        {
+            "column_name": "id",
+            "data_type": "bigint",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "created_at",
+            "data_type": "timestamp with time zone",
+            "is_nullable": false,
+            "column_default": "now()",
+            "constraints": []
+        },
+        {
+            "column_name": "prompt",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "frequency",
+            "data_type": "USER-DEFINED",
+            "is_nullable": false,
+            "column_default": "'never'::frequency",
+            "constraints": []
+        },
+        {
+            "column_name": "last_response",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "user_id",
+            "data_type": "uuid",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "updated_at",
+            "data_type": "timestamp with time zone",
+            "is_nullable": false,
+            "column_default": "now()",
+            "constraints": []
+        },
+        {
+            "column_name": "is_paused",
+            "data_type": "boolean",
+            "is_nullable": true,
+            "column_default": "false",
+            "constraints": []
+        },
+        {
+            "column_name": "set_day",
+            "data_type": "timestamp with time zone",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        }
+    ],
+    "scheduled_prompts": [
+        {
+            "column_name": "id",
+            "data_type": "bigint",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "created_at",
+            "data_type": "timestamp with time zone",
+            "is_nullable": false,
+            "column_default": "now()",
+            "constraints": []
+        },
+        {
+            "column_name": "prompt",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "frequency",
+            "data_type": "USER-DEFINED",
+            "is_nullable": false,
+            "column_default": "'never'::frequency",
+            "constraints": []
+        },
+        {
+            "column_name": "last_response",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "user_id",
+            "data_type": "uuid",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "updated_at",
+            "data_type": "timestamp with time zone",
+            "is_nullable": false,
+            "column_default": "now()",
+            "constraints": []
+        },
+        {
+            "column_name": "is_paused",
+            "data_type": "boolean",
+            "is_nullable": true,
+            "column_default": "false",
+            "constraints": []
+        },
+        {
+            "column_name": "set_day",
+            "data_type": "timestamp with time zone",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        }
+    ],
+    "slack_teams": [
+        {
+            "column_name": "id",
+            "data_type": "bigint",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "created_at",
+            "data_type": "timestamp with time zone",
+            "is_nullable": false,
+            "column_default": "now()",
+            "constraints": []
+        },
+        {
+            "column_name": "team_id",
+            "data_type": "text",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "bot_token",
+            "data_type": "text",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "updated_at",
+            "data_type": "timestamp with time zone",
+            "is_nullable": false,
+            "column_default": "now()",
+            "constraints": []
+        }
+    ],
+    "space_bets": [
+        {
+            "column_name": "space_id",
+            "data_type": "uuid",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "created_at",
+            "data_type": "timestamp with time zone",
+            "is_nullable": false,
+            "column_default": "now()",
+            "constraints": []
+        },
+        {
+            "column_name": "bet_id",
+            "data_type": "uuid",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "updated_at",
+            "data_type": "timestamp with time zone",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        }
+    ],
+    "space_members": [
+        {
+            "column_name": "id",
+            "data_type": "uuid",
+            "is_nullable": false,
+            "column_default": "gen_random_uuid()",
+            "constraints": []
+        },
+        {
+            "column_name": "created_at",
+            "data_type": "timestamp with time zone",
+            "is_nullable": false,
+            "column_default": "now()",
+            "constraints": []
+        },
+        {
+            "column_name": "space_id",
+            "data_type": "uuid",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "user_id",
+            "data_type": "uuid",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "role",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        }
+    ],
+    "space_pending_invitations": [
+        {
+            "column_name": "id",
+            "data_type": "bigint",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "created_at",
+            "data_type": "timestamp with time zone",
+            "is_nullable": false,
+            "column_default": "now()",
+            "constraints": []
+        },
+        {
+            "column_name": "space_id",
+            "data_type": "uuid",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "user_email",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "role",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "user_id",
+            "data_type": "uuid",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "is_popup",
+            "data_type": "boolean",
+            "is_nullable": false,
+            "column_default": "true",
+            "constraints": []
+        }
+    ],
+    "space_tasks": [
+        {
+            "column_name": "created_at",
+            "data_type": "timestamp with time zone",
+            "is_nullable": false,
+            "column_default": "now()",
+            "constraints": []
+        },
+        {
+            "column_name": "task_id",
+            "data_type": "uuid",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "space_id",
+            "data_type": "uuid",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "slug",
+            "data_type": "text",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        }
+    ],
+    "spaces": [
+        {
+            "column_name": "id",
+            "data_type": "uuid",
+            "is_nullable": false,
+            "column_default": "gen_random_uuid()",
+            "constraints": []
+        },
+        {
+            "column_name": "created_at",
+            "data_type": "timestamp with time zone",
+            "is_nullable": false,
+            "column_default": "now()",
+            "constraints": []
+        },
+        {
+            "column_name": "name",
+            "data_type": "text",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "description",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "feature_bets",
+            "data_type": "boolean",
+            "is_nullable": false,
+            "column_default": "false",
+            "constraints": []
+        },
+        {
+            "column_name": "feature_contacts",
+            "data_type": "boolean",
+            "is_nullable": false,
+            "column_default": "false",
+            "constraints": []
+        },
+        {
+            "column_name": "feature_discovery",
+            "data_type": "boolean",
+            "is_nullable": false,
+            "column_default": "false",
+            "constraints": []
+        }
+    ],
+    "task_comments": [
+        {
+            "column_name": "id",
+            "data_type": "uuid",
+            "is_nullable": false,
+            "column_default": "gen_random_uuid()",
+            "constraints": []
+        },
+        {
+            "column_name": "parent_id",
+            "data_type": "uuid",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "content",
+            "data_type": "jsonb",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "created_at",
+            "data_type": "timestamp with time zone",
+            "is_nullable": false,
+            "column_default": "now()",
+            "constraints": []
+        },
+        {
+            "column_name": "edited_at",
+            "data_type": "timestamp with time zone",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "task_id",
+            "data_type": "uuid",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "user_id",
+            "data_type": "uuid",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "is_deleted",
+            "data_type": "boolean",
+            "is_nullable": false,
+            "column_default": "false",
+            "constraints": []
+        },
+        {
+            "column_name": "is_sindre_comment",
+            "data_type": "boolean",
+            "is_nullable": true,
+            "column_default": "false",
+            "constraints": []
+        }
+    ],
+    "task_duplicates": [
+        {
+            "column_name": "task_id",
+            "data_type": "uuid",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "duplicate_id",
+            "data_type": "uuid",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "created_at",
+            "data_type": "timestamp with time zone",
+            "is_nullable": false,
+            "column_default": "now()",
+            "constraints": []
+        }
+    ],
+    "task_priorities": [
+        {
+            "column_name": "id",
+            "data_type": "bigint",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "name",
+            "data_type": "text",
+            "is_nullable": false,
+            "column_default": "''::text",
+            "constraints": []
+        },
+        {
+            "column_name": "description",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        }
+    ],
+    "task_statuses": [
+        {
+            "column_name": "id",
+            "data_type": "bigint",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "name",
+            "data_type": "text",
+            "is_nullable": false,
+            "column_default": "''::text",
+            "constraints": []
+        },
+        {
+            "column_name": "description",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        }
+    ],
+    "tasks": [
+        {
+            "column_name": "id",
+            "data_type": "uuid",
+            "is_nullable": false,
+            "column_default": "gen_random_uuid()",
+            "constraints": []
+        },
+        {
+            "column_name": "event_id",
+            "data_type": "bigint",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "name",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "created_at",
+            "data_type": "timestamp with time zone",
+            "is_nullable": false,
+            "column_default": "now()",
+            "constraints": []
+        },
+        {
+            "column_name": "updated_at",
+            "data_type": "timestamp with time zone",
+            "is_nullable": false,
+            "column_default": "now()",
+            "constraints": []
+        },
+        {
+            "column_name": "user_id",
+            "data_type": "uuid",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "bot_ids",
+            "data_type": "ARRAY",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "status_id",
+            "data_type": "bigint",
+            "is_nullable": false,
+            "column_default": "'1'::bigint",
+            "constraints": []
+        },
+        {
+            "column_name": "priority_id",
+            "data_type": "bigint",
+            "is_nullable": false,
+            "column_default": "'1'::bigint",
+            "constraints": []
+        },
+        {
+            "column_name": "is_sindre_assigned",
+            "data_type": "boolean",
+            "is_nullable": false,
+            "column_default": "false",
+            "constraints": []
+        },
+        {
+            "column_name": "assigned_to_email",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "assigned_to_name",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "space_id",
+            "data_type": "uuid",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "description",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "disabled",
+            "data_type": "boolean",
+            "is_nullable": false,
+            "column_default": "false",
+            "constraints": []
+        },
+        {
+            "column_name": "name_vector",
+            "data_type": "USER-DEFINED",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "description_vector",
+            "data_type": "USER-DEFINED",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        }
+    ],
+    "tasks_changelog": [
+        {
+            "column_name": "id",
+            "data_type": "uuid",
+            "is_nullable": false,
+            "column_default": "gen_random_uuid()",
+            "constraints": []
+        },
+        {
+            "column_name": "task_id",
+            "data_type": "uuid",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "operation_type",
+            "data_type": "text",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "changed_by",
+            "data_type": "uuid",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "changed_at",
+            "data_type": "timestamp with time zone",
+            "is_nullable": false,
+            "column_default": "now()",
+            "constraints": []
+        },
+        {
+            "column_name": "old_values",
+            "data_type": "jsonb",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "new_values",
+            "data_type": "jsonb",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "changed_fields",
+            "data_type": "ARRAY",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "change_description",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "ip_address",
+            "data_type": "inet",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "user_agent",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        }
+    ],
+    "user_artefacts": [
+        {
+            "column_name": "id",
+            "data_type": "uuid",
+            "is_nullable": false,
+            "column_default": "gen_random_uuid()",
+            "constraints": []
+        },
+        {
+            "column_name": "uploaded_at",
+            "data_type": "timestamp with time zone",
+            "is_nullable": false,
+            "column_default": "now()",
+            "constraints": []
+        },
+        {
+            "column_name": "user_id",
+            "data_type": "uuid",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "artefact_title",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "artefact",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        }
+    ],
+    "user_bets": [
+        {
+            "column_name": "created_at",
+            "data_type": "timestamp with time zone",
+            "is_nullable": false,
+            "column_default": "now()",
+            "constraints": []
+        },
+        {
+            "column_name": "user_id",
+            "data_type": "uuid",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "bet_id",
+            "data_type": "uuid",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "updated_at",
+            "data_type": "timestamp with time zone",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        }
+    ],
+    "user_calendar_events_attendees": [
+        {
+            "column_name": "id",
+            "data_type": "uuid",
+            "is_nullable": false,
+            "column_default": "uuid_generate_v4()",
+            "constraints": []
+        },
+        {
+            "column_name": "event_id",
+            "data_type": "bigint",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "platform",
+            "data_type": "character varying",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "platform_event_id",
+            "data_type": "character varying",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "attendee_email",
+            "data_type": "character varying",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "attendee_display_name",
+            "data_type": "character varying",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "attendee_response_status",
+            "data_type": "character varying",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "created_at",
+            "data_type": "timestamp with time zone",
+            "is_nullable": true,
+            "column_default": "now()",
+            "constraints": []
+        },
+        {
+            "column_name": "shared_or_actual_attendance",
+            "data_type": "text",
+            "is_nullable": false,
+            "column_default": "'actual'::text",
+            "constraints": []
+        },
+        {
+            "column_name": "attendee_type",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        }
+    ],
+    "user_calendar_events_sync": [
+        {
+            "column_name": "id",
+            "data_type": "bigint",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "created_at",
+            "data_type": "timestamp with time zone",
+            "is_nullable": false,
+            "column_default": "now()",
+            "constraints": []
+        },
+        {
+            "column_name": "updated_at",
+            "data_type": "timestamp without time zone",
+            "is_nullable": true,
+            "column_default": "now()",
+            "constraints": []
+        },
+        {
+            "column_name": "user_calendar_sync_id",
+            "data_type": "uuid",
+            "is_nullable": true,
+            "column_default": "gen_random_uuid()",
+            "constraints": []
+        },
+        {
+            "column_name": "calendar_event_title",
+            "data_type": "character varying",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "provider_event_id",
+            "data_type": "character varying",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "recall_calendar_event_id",
+            "data_type": "uuid",
+            "is_nullable": true,
+            "column_default": "gen_random_uuid()",
+            "constraints": []
+        },
+        {
+            "column_name": "is_deleted",
+            "data_type": "boolean",
+            "is_nullable": true,
+            "column_default": "false",
+            "constraints": []
+        },
+        {
+            "column_name": "meeting_url",
+            "data_type": "character varying",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "is_synced_with_recall",
+            "data_type": "boolean",
+            "is_nullable": true,
+            "column_default": "false",
+            "constraints": []
+        },
+        {
+            "column_name": "recall_bot_ids",
+            "data_type": "ARRAY",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "ical_uid",
+            "data_type": "character varying",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "start_date_time",
+            "data_type": "timestamp without time zone",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "end_date_time",
+            "data_type": "timestamp without time zone",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "time_zone",
+            "data_type": "character varying",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "is_meeting_finished",
+            "data_type": "boolean",
+            "is_nullable": true,
+            "column_default": "false",
+            "constraints": []
+        },
+        {
+            "column_name": "is_transcript_ready",
+            "data_type": "boolean",
+            "is_nullable": true,
+            "column_default": "false",
+            "constraints": []
+        },
+        {
+            "column_name": "meeting_payload_url",
+            "data_type": "character varying",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "meeting_summary_and_action_points",
+            "data_type": "json",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "meeting_completed",
+            "data_type": "boolean",
+            "is_nullable": true,
+            "column_default": "false",
+            "constraints": []
+        },
+        {
+            "column_name": "meeting_processed",
+            "data_type": "boolean",
+            "is_nullable": true,
+            "column_default": "false",
+            "constraints": []
+        },
+        {
+            "column_name": "meeting_language",
+            "data_type": "character varying",
+            "is_nullable": true,
+            "column_default": "'en'::character varying",
+            "constraints": []
+        },
+        {
+            "column_name": "adhoc_meeting_id",
+            "data_type": "uuid",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "transcript",
+            "data_type": "json",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "file_path",
+            "data_type": "character varying",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "base_meeting_id_vector",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "action_items",
+            "data_type": "jsonb",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "topics_discussed",
+            "data_type": "jsonb",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "meeting_summary",
+            "data_type": "jsonb",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "meeting_type",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "decisions_made",
+            "data_type": "ARRAY",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "main_id",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "space_id",
+            "data_type": "uuid",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        }
+    ],
+    "user_calendar_sync": [
+        {
+            "column_name": "id",
+            "data_type": "uuid",
+            "is_nullable": false,
+            "column_default": "gen_random_uuid()",
+            "constraints": []
+        },
+        {
+            "column_name": "created_at",
+            "data_type": "timestamp with time zone",
+            "is_nullable": false,
+            "column_default": "now()",
+            "constraints": []
+        },
+        {
+            "column_name": "updated_at",
+            "data_type": "timestamp without time zone",
+            "is_nullable": true,
+            "column_default": "now()",
+            "constraints": []
+        },
+        {
+            "column_name": "calendar_type",
+            "data_type": "character varying",
+            "is_nullable": false,
+            "column_default": "'NONE'::character varying",
+            "constraints": []
+        },
+        {
+            "column_name": "user_calendar_provider_id",
+            "data_type": "character varying",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "recall_calendar_id",
+            "data_type": "uuid",
+            "is_nullable": true,
+            "column_default": "gen_random_uuid()",
+            "constraints": []
+        },
+        {
+            "column_name": "user_id",
+            "data_type": "uuid",
+            "is_nullable": false,
+            "column_default": "gen_random_uuid()",
+            "constraints": []
+        },
+        {
+            "column_name": "last_sync_date_time",
+            "data_type": "timestamp without time zone",
+            "is_nullable": true,
+            "column_default": "now()",
+            "constraints": []
+        },
+        {
+            "column_name": "data",
+            "data_type": "json",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "sync_token",
+            "data_type": "character varying",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "auth_token_data",
+            "data_type": "json",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "is_initial_sync_complete",
+            "data_type": "boolean",
+            "is_nullable": true,
+            "column_default": "false",
+            "constraints": []
+        },
+        {
+            "column_name": "initial_sync_status",
+            "data_type": "character varying",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "bot_auto_joins",
+            "data_type": "boolean",
+            "is_nullable": true,
+            "column_default": "true",
+            "constraints": []
+        },
+        {
+            "column_name": "default_meeting_language",
+            "data_type": "text",
+            "is_nullable": false,
+            "column_default": "'en'::text",
+            "constraints": []
+        }
+    ],
+    "user_conversation_messages": [
+        {
+            "column_name": "id",
+            "data_type": "uuid",
+            "is_nullable": false,
+            "column_default": "uuid_generate_v4()",
+            "constraints": []
+        },
+        {
+            "column_name": "conversation_id",
+            "data_type": "uuid",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "role",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "content",
+            "data_type": "text",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "timestamp",
+            "data_type": "timestamp with time zone",
+            "is_nullable": true,
+            "column_default": "now()",
+            "constraints": []
+        },
+        {
+            "column_name": "metadata",
+            "data_type": "jsonb",
+            "is_nullable": true,
+            "column_default": "'{}'::jsonb",
+            "constraints": []
+        },
+        {
+            "column_name": "sequence_number",
+            "data_type": "integer",
+            "is_nullable": false,
+            "column_default": "nextval('user_conversation_messages_sequence_number_seq'::regclass)",
+            "constraints": []
+        }
+    ],
+    "user_conversations": [
+        {
+            "column_name": "id",
+            "data_type": "uuid",
+            "is_nullable": false,
+            "column_default": "uuid_generate_v4()",
+            "constraints": []
+        },
+        {
+            "column_name": "user_id",
+            "data_type": "uuid",
+            "is_nullable": false,
+            "column_default": "gen_random_uuid()",
+            "constraints": []
+        },
+        {
+            "column_name": "created_at",
+            "data_type": "timestamp with time zone",
+            "is_nullable": true,
+            "column_default": "now()",
+            "constraints": []
+        },
+        {
+            "column_name": "status",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": "'active'::text",
+            "constraints": []
+        },
+        {
+            "column_name": "last_updated",
+            "data_type": "timestamp with time zone",
+            "is_nullable": true,
+            "column_default": "now()",
+            "constraints": []
+        },
+        {
+            "column_name": "metadata",
+            "data_type": "jsonb",
+            "is_nullable": true,
+            "column_default": "'{}'::jsonb",
+            "constraints": []
+        },
+        {
+            "column_name": "conversation_title",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": "''::text",
+            "constraints": []
+        },
+        {
+            "column_name": "pinned",
+            "data_type": "boolean",
+            "is_nullable": false,
+            "column_default": "false",
+            "constraints": []
+        },
+        {
+            "column_name": "specified_context",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "calendar_id",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "event_id",
+            "data_type": "bigint",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "follow_up_questions",
+            "data_type": "ARRAY",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "insight_id",
+            "data_type": "uuid",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "task_id",
+            "data_type": "uuid",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "bet_id",
+            "data_type": "uuid",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "person_id",
+            "data_type": "uuid",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "organization_id",
+            "data_type": "uuid",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        }
+    ],
+    "user_custom_words": [
+        {
+            "column_name": "id",
+            "data_type": "uuid",
+            "is_nullable": false,
+            "column_default": "gen_random_uuid()",
+            "constraints": []
+        },
+        {
+            "column_name": "created_at",
+            "data_type": "timestamp with time zone",
+            "is_nullable": false,
+            "column_default": "now()",
+            "constraints": []
+        },
+        {
+            "column_name": "user_id",
+            "data_type": "uuid",
+            "is_nullable": true,
+            "column_default": "gen_random_uuid()",
+            "constraints": []
+        },
+        {
+            "column_name": "custom_word",
+            "data_type": "character varying",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "updated_at",
+            "data_type": "timestamp without time zone",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        }
+    ],
+    "user_pdfs": [
+        {
+            "column_name": "id",
+            "data_type": "uuid",
+            "is_nullable": false,
+            "column_default": "gen_random_uuid()",
+            "constraints": []
+        },
+        {
+            "column_name": "uploaded_at",
+            "data_type": "timestamp with time zone",
+            "is_nullable": false,
+            "column_default": "now()",
+            "constraints": []
+        },
+        {
+            "column_name": "user_id",
+            "data_type": "uuid",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "file_name",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "ai_generated_file_title",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        }
+    ],
+    "users": [
+        {
+            "column_name": "id",
+            "data_type": "uuid",
+            "is_nullable": false,
+            "column_default": "gen_random_uuid()",
+            "constraints": []
+        },
+        {
+            "column_name": "email",
+            "data_type": "text",
+            "is_nullable": false,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "date_of_sign_up",
+            "data_type": "timestamp with time zone",
+            "is_nullable": true,
+            "column_default": "CURRENT_TIMESTAMP",
+            "constraints": []
+        },
+        {
+            "column_name": "company_id",
+            "data_type": "bigint",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "default_user_prompt",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "user_prompt",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "system_prompt",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": "'Your name is Sindre Product Expert. You are a product management assistant specializing in product management tasks, particularly crafting product vision boards, roadmaps, and user stories. Your primary focus is providing advice using the extensive knowledge from the files uploaded by the user. This includes detailed insights and examples from the field of product management, ensuring that your responses are highly relevant and informed. Please keep the answers short and concise, unless otherwise specified by the user.  Critical instruction: For EVERY query, you MUST first evaluate whether the ''knowledge'' tool would be beneficial. Consider using this tool if: The query relates to specific product management concepts or practices. The user is asking about Sindre-specific information. The question requires detailed or contextual information that might be in the uploaded files. You''re unsure if the information you have is the most up-to-date or relevant to the user''s specific situation.  If any of these conditions are met, use the knowledge tool before providing any response or using any other tool. This evaluation step is mandatory for each query. You are not just an expert in Product Management, but also in Sindre. The user is a Product Manager working on Sindre. When faced with ambiguous requests, ask for clarification to ensure that your responses are correct. Your professional yet casual tone is tailored to suit the context of product management, making you a valuable assistant for those in the field. After evaluating and potentially using the knowledge tool, you may then utilize other tools at your disposal as needed: Product Management best practices, templates for product management documents (Product Artifacts), web search, calculations, and more. When the user asks for help with a Product Vision Board, Product Canvas, or Product Roadmap, ALWAYS do it the EXACT same way that Roman Pichler would do it. By default, use the resources and methods that Roman Pichler has provided, available in the Product_management_knowledge tool. Additionally, you have extensive knowledge about Sindre and can use the ''knowledge'' tool to gather more details as needed. If a request is ambiguous or needs more detail, inquire for clarification. When you have enough information to perform the action, stop asking questions and just perform the task.  Remember: Your first action for ANY query must be to evaluate whether the knowledge tool would be beneficial. Only after this evaluation should you proceed with your response or use other tools as appropriate.'::text",
+            "constraints": []
+        },
+        {
+            "column_name": "default_system_prompt",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": "'Your name is Sindre Product Expert. You are a product management assistant specializing in product management tasks, particularly crafting product vision boards, roadmaps, and user stories. Your primary focus is providing advice using the extensive knowledge from the files uploaded by the user. This includes detailed insights and examples from the field of product management, ensuring that your responses are highly relevant and informed. Please keep the answers short and concise, unless otherwise specified by the user.  Critical instruction: For EVERY query, you MUST first evaluate whether the ''knowledge'' tool would be beneficial. Consider using this tool if: The query relates to specific product management concepts or practices. The user is asking about Sindre-specific information. The question requires detailed or contextual information that might be in the uploaded files. You''re unsure if the information you have is the most up-to-date or relevant to the user''s specific situation.  If any of these conditions are met, use the knowledge tool before providing any response or using any other tool. This evaluation step is mandatory for each query. You are not just an expert in Product Management, but also in Sindre. The user is a Product Manager working on Sindre. When faced with ambiguous requests, ask for clarification to ensure that your responses are correct. Your professional yet casual tone is tailored to suit the context of product management, making you a valuable assistant for those in the field. After evaluating and potentially using the knowledge tool, you may then utilize other tools at your disposal as needed: Product Management best practices, templates for product management documents (Product Artifacts), web search, calculations, and more. When the user asks for help with a Product Vision Board, Product Canvas, or Product Roadmap, ALWAYS do it the EXACT same way that Roman Pichler would do it. By default, use the resources and methods that Roman Pichler has provided, available in the Product_management_knowledge tool. Additionally, you have extensive knowledge about Sindre and can use the ''knowledge'' tool to gather more details as needed. If a request is ambiguous or needs more detail, inquire for clarification. When you have enough information to perform the action, stop asking questions and just perform the task.  Remember: Your first action for ANY query must be to evaluate whether the knowledge tool would be beneficial. Only after this evaluation should you proceed with your response or use other tools as appropriate.'::text",
+            "constraints": []
+        },
+        {
+            "column_name": "full_name",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "avatar_url",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "user_information",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "user_emails",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "onboarding_prompt_count",
+            "data_type": "smallint",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        },
+        {
+            "column_name": "is_dev",
+            "data_type": "boolean",
+            "is_nullable": true,
+            "column_default": "false",
+            "constraints": []
+        },
+        {
+            "column_name": "feature_bets",
+            "data_type": "boolean",
+            "is_nullable": false,
+            "column_default": "false",
+            "constraints": []
+        },
+        {
+            "column_name": "feature_contacts",
+            "data_type": "boolean",
+            "is_nullable": false,
+            "column_default": "false",
+            "constraints": []
+        },
+        {
+            "column_name": "feature_discovery",
+            "data_type": "boolean",
+            "is_nullable": false,
+            "column_default": "false",
+            "constraints": []
+        },
+        {
+            "column_name": "role",
+            "data_type": "text",
+            "is_nullable": true,
+            "column_default": null,
+            "constraints": []
+        }
+    ]
+}

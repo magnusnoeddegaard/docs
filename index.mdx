@@ -1,97 +1,178 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: "Sindre API Overview"
+description: "AI-powered meeting intelligence and product management platform API"
 ---
 
-## Setting up
+# Welcome to Sindre API
 
-Get your documentation site up and running in minutes.
+**Transform meeting recordings into actionable insights with AI**
+
+Sindre is an intelligent meeting processing and product management platform that automatically extracts tasks, insights, and strategic bets from your meeting content. Our REST API provides comprehensive access to meeting intelligence, task management, and integration capabilities.
 
 <Card
-  title="Start here"
+  title="Quick Start"
   icon="rocket"
   href="/quickstart"
   horizontal
 >
-  Follow our three step quickstart guide.
+  Get up and running with your first API call in minutes.
 </Card>
 
-## Make it yours
+## Core Features
 
-Design a docs site that looks great and empowers your users.
+Sindre transforms your meeting data into structured, actionable information through powerful AI processing.
 
-<Columns cols={2}>
+<CardGroup cols={2}>
   <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
+    title="Meeting Intelligence"
+    icon="microphone"
+    href="/api-reference/meetings"
   >
-    Edit your docs locally and preview them in real time.
+    Process audio recordings with transcription, speaker diarization, and content analysis.
   </Card>
   <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
+    title="Task Management"
+    icon="list-check"
+    href="/api-reference/tasks"
   >
-    Customize the design and colors of your site to match your brand.
-  </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
+    Automated task extraction and tracking with AI-powered insights and similarity detection.
   </Card>
   <Card
-    title="API documentation"
-    icon="terminal"
+    title="Strategic Bets"
+    icon="target"
+    href="/api-reference/bets"
+  >
+    Track high-level initiatives and strategic goals with progress monitoring.
+  </Card>
+  <Card
+    title="Semantic Search"
+    icon="search"
+    href="/api-reference/search"
+  >
+    Vector-powered search across all meeting content and extracted insights.
+  </Card>
+</CardGroup>
+
+## Technology Stack
+
+Built with modern technologies for scale, reliability, and performance.
+
+<AccordionGroup>
+  <Accordion icon="server" title="Backend Architecture">
+    - **Runtime**: Node.js 22+ with Express.js
+    - **Database**: Supabase (PostgreSQL) with Row Level Security
+    - **Authentication**: JWT-based with role-based access control
+    - **Architecture**: Clean MVC pattern with services layer
+  </Accordion>
+  <Accordion icon="brain" title="AI & Machine Learning">
+    - **LLM**: OpenAI GPT-4o for content analysis
+    - **Transcription**: OpenAI Whisper for audio processing  
+    - **Vector Database**: Pinecone for semantic search
+    - **Framework**: LangChain for conversation management
+  </Accordion>
+  <Accordion icon="cloud" title="Cloud Services">
+    - **Storage**: Google Cloud Storage for audio files
+    - **Tasks**: Google Cloud Tasks for background processing
+    - **Deployment**: Docker-ready with production configurations
+  </Accordion>
+</AccordionGroup>
+
+## API Capabilities
+
+<CardGroup cols={3}>
+  <Card
+    title="Meeting Processing"
+    icon="waveform-lines"
+  >
+    Upload audio, get transcripts, extract speakers, analyze content
+  </Card>
+  <Card
+    title="Task Extraction"
+    icon="clipboard-list"
+  >
+    AI-powered task detection with assignees, priorities, and due dates
+  </Card>
+  <Card
+    title="People & Orgs"
+    icon="users"
+  >
+    Manage contacts, organizations, and relationship mapping
+  </Card>
+  <Card
+    title="Integrations"
+    icon="plug"
+  >
+    Connect with Google Calendar, Slack, Asana, Linear, and more
+  </Card>
+  <Card
+    title="Webhooks"
+    icon="webhook"
+  >
+    Real-time notifications for meeting processing and updates
+  </Card>
+  <Card
+    title="Analytics"
+    icon="chart-line"
+  >
+    Insights into meeting patterns, task completion, and team dynamics
+  </Card>
+</CardGroup>
+
+## Get Started
+
+<Steps>
+  <Step title="Authentication">
+    Set up your API credentials and understand authentication requirements.
+  </Step>
+  <Step title="First API Call">
+    Make your first request to create a meeting and upload audio.
+  </Step>
+  <Step title="Process Results">
+    Retrieve transcriptions, extracted tasks, and generated insights.
+  </Step>
+  <Step title="Build Integration">
+    Connect Sindre with your existing workflow and tools.
+  </Step>
+</Steps>
+
+## Popular Use Cases
+
+<Tabs>
+  <Tab title="Product Teams">
+    - Extract action items from product planning meetings
+    - Track feature requests and user feedback
+    - Monitor strategic initiatives and OKRs
+    - Connect with project management tools
+  </Tab>
+  <Tab title="Sales Teams">
+    - Capture client requirements and follow-ups
+    - Track deals and relationship progress
+    - Analyze customer conversations for insights
+    - Integrate with CRM systems
+  </Tab>
+  <Tab title="Engineering Teams">
+    - Document technical decisions and architecture discussions
+    - Extract bug reports and feature specifications
+    - Track sprint planning and retrospective actions
+    - Connect with development tools
+  </Tab>
+</Tabs>
+
+## Ready to Build?
+
+<CardGroup cols={2}>
+  <Card
+    title="API Reference"
+    icon="code"
     href="/api-reference/introduction"
   >
-    Auto-generate API documentation from OpenAPI specifications.
-  </Card>
-</Columns>
-
-## Create beautiful pages
-
-Everything you need to create world-class documentation.
-
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
+    Explore endpoints, parameters, and response formats.
   </Card>
   <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
+    title="Integration Guides"
+    icon="puzzle-piece"
+    href="/integrations/overview"
   >
-    Add sample code to demonstrate how to use your product.
+    Connect Sindre with your favorite tools and platforms.
   </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
-
-## Need inspiration?
-
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+</CardGroup>

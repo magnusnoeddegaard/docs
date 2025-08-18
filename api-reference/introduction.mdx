@@ -1,33 +1,504 @@
 ---
-title: 'Introduction'
-description: 'Example section for showcasing API endpoints'
+title: "API Reference"
+description: "Complete reference for the Sindre API endpoints and usage patterns"
 ---
 
-<Note>
-  If you're not looking to build API reference documentation, you can delete
-  this section by removing the api-reference folder.
-</Note>
+# Sindre API Reference
 
-## Welcome
+The Sindre API provides comprehensive access to meeting intelligence, task management, and integration capabilities. This reference covers all available endpoints, request/response formats, and best practices.
 
-There are two ways to build API documentation: [OpenAPI](https://mintlify.com/docs/api-playground/openapi/setup) and [MDX components](https://mintlify.com/docs/api-playground/mdx/configuration). For the starter kit, we are using the following OpenAPI specification.
+## Base URL
 
-<Card
-  title="Plant Store Endpoints"
-  icon="leaf"
-  href="https://github.com/mintlify/starter/blob/main/api-reference/openapi.json"
->
-  View the OpenAPI specification file
-</Card>
+All API requests should be made to:
+
+```
+https://api.sindre.com
+```
+
+For self-hosted installations, replace with your domain.
 
 ## Authentication
 
-All API endpoints are authenticated using Bearer tokens and picked up from the specification file.
+### Bearer Token Authentication
+
+All API requests require authentication using a bearer token in the `Authorization` header:
+
+```javascript
+const headers = {
+  'Authorization': `Bearer ${SINDRE_API_KEY}`,
+  'Content-Type': 'application/json'
+};
+```
+
+<Tabs>
+  <Tab title="JavaScript">
+    ```javascript
+    const response = await fetch('https://api.sindre.com/api/meetings', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${SINDRE_API_KEY}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    ```
+  </Tab>
+  <Tab title="cURL">
+    ```bash
+    curl -X GET \
+      -H "Authorization: Bearer YOUR_API_KEY" \
+      -H "Content-Type: application/json" \
+      https://api.sindre.com/api/meetings
+    ```
+  </Tab>
+  <Tab title="Python">
+    ```python
+    import requests
+    
+    headers = {
+        'Authorization': f'Bearer {SINDRE_API_KEY}',
+        'Content-Type': 'application/json'
+    }
+    
+    response = requests.get('https://api.sindre.com/api/meetings', headers=headers)
+    ```
+  </Tab>
+</Tabs>
+
+### Getting Your API Key
+
+<Steps>
+  <Step title="Create Account">
+    Sign up for a Sindre account at [app.sindre.com](https://app.sindre.com)
+  </Step>
+  <Step title="Generate API Key">
+    Navigate to Settings → API Keys and generate a new key
+  </Step>
+  <Step title="Secure Storage">
+    Store your API key securely and never expose it in client-side code
+  </Step>
+</Steps>
+
+<Warning>
+  **Keep your API key secure!** Never commit API keys to version control or expose them in client-side applications. Use environment variables in production.
+</Warning>
+
+## API Conventions
+
+### RESTful Design
+
+The Sindre API follows REST conventions with predictable endpoint patterns:
+
+<AccordionGroup>
+  <Accordion icon="list" title="Resource Collections">
+    ```
+    GET    /api/meetings     # List all meetings
+    POST   /api/meetings     # Create a new meeting
+    ```
+  </Accordion>
+  <Accordion icon="file" title="Individual Resources">
+    ```
+    GET    /api/meetings/:id # Get specific meeting
+    PUT    /api/meetings/:id # Update meeting
+    DELETE /api/meetings/:id # Delete meeting
+    ```
+  </Accordion>
+  <Accordion icon="filter" title="Filtered Collections">
+    ```
+    GET /api/tasks?status=pending        # Filter by status
+    GET /api/tasks?meetingId=123         # Filter by meeting
+    GET /api/meetings?limit=10&offset=20 # Pagination
+    ```
+  </Accordion>
+  <Accordion icon="link" title="Nested Resources">
+    ```
+    GET    /api/tasks/:taskId/comments           # Get task comments
+    POST   /api/tasks/:taskId/comments           # Create comment
+    PUT    /api/tasks/:taskId/comments/:commentId # Update comment
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### HTTP Methods
+
+<CardGroup cols={4}>
+  <Card title="GET" icon="download">
+    **Retrieve data**
+    - Safe and idempotent
+    - No request body
+    - Returns resource data
+  </Card>
+  <Card title="POST" icon="plus">
+    **Create resources**
+    - Request body required
+    - Returns created resource
+    - Status: 201 Created
+  </Card>
+  <Card title="PUT" icon="pen">
+    **Update resources**
+    - Full resource replacement
+    - Request body required
+    - Status: 200 OK
+  </Card>
+  <Card title="DELETE" icon="trash">
+    **Remove resources**
+    - No request body
+    - Status: 204 No Content
+    - Returns success message
+  </Card>
+</CardGroup>
+
+## Request/Response Format
+
+### Content Type
+
+All requests and responses use JSON format:
+
+```javascript
+Content-Type: application/json
+```
+
+### Request Body Structure
+
+<Tabs>
+  <Tab title="Create Request">
+    ```json
+    {
+      "title": "Product Planning Meeting",
+      "description": "Quarterly product roadmap discussion",
+      "scheduled_start_time": "2024-01-15T10:00:00Z",
+      "duration": 60,
+      "participants": [
+        "john@company.com",
+        "jane@company.com"
+      ]
+    }
+    ```
+  </Tab>
+  <Tab title="Update Request">
+    ```json
+    {
+      "title": "Updated Meeting Title",
+      "status": "completed",
+      "notes": "Meeting completed successfully"
+    }
+    ```
+  </Tab>
+  <Tab title="Filter Query">
+    ```
+    GET /api/meetings?status=completed&limit=10&offset=0
+    ```
+  </Tab>
+</Tabs>
+
+### Response Structure
+
+All API responses follow a consistent format:
+
+<Tabs>
+  <Tab title="Success Response">
+    ```json
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440000",
+      "title": "Product Planning Meeting",
+      "status": "processing",
+      "created_at": "2024-01-15T09:00:00Z",
+      "updated_at": "2024-01-15T09:00:00Z",
+      "user_id": "user-uuid-here"
+    }
+    ```
+  </Tab>
+  <Tab title="Collection Response">
+    ```json
+    {
+      "data": [
+        {
+          "id": "meeting-1",
+          "title": "Meeting 1"
+        },
+        {
+          "id": "meeting-2", 
+          "title": "Meeting 2"
+        }
+      ],
+      "pagination": {
+        "total": 25,
+        "limit": 10,
+        "offset": 0,
+        "has_more": true
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Error Response">
+    ```json
+    {
+      "error": "Meeting not found",
+      "code": "MEETING_NOT_FOUND",
+      "details": {
+        "meeting_id": "invalid-id",
+        "timestamp": "2024-01-15T09:00:00Z"
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## HTTP Status Codes
+
+<AccordionGroup>
+  <Accordion icon="check-circle" title="Success Codes (2xx)">
+    - **200 OK** - Request successful, data returned
+    - **201 Created** - Resource created successfully
+    - **204 No Content** - Request successful, no data to return
+  </Accordion>
+  <Accordion icon="warning" title="Client Error Codes (4xx)">
+    - **400 Bad Request** - Invalid request format or parameters
+    - **401 Unauthorized** - Missing or invalid authentication
+    - **403 Forbidden** - Access denied for this resource
+    - **404 Not Found** - Resource does not exist
+    - **429 Too Many Requests** - Rate limit exceeded
+  </Accordion>
+  <Accordion icon="x-circle" title="Server Error Codes (5xx)">
+    - **500 Internal Server Error** - Unexpected server error
+    - **502 Bad Gateway** - Upstream service error
+    - **503 Service Unavailable** - Service temporarily unavailable
+  </Accordion>
+</AccordionGroup>
+
+## Error Handling
+
+### Error Response Format
 
 ```json
-"security": [
-  {
-    "bearerAuth": []
+{
+  "error": "Human-readable error message",
+  "code": "MACHINE_READABLE_ERROR_CODE",
+  "details": {
+    "field": "specific_field_with_error",
+    "value": "invalid_value_provided",
+    "timestamp": "2024-01-15T09:00:00Z"
   }
-]
+}
 ```
+
+### Common Error Codes
+
+<Tabs>
+  <Tab title="Authentication Errors">
+    ```json
+    {
+      "error": "Invalid API key",
+      "code": "INVALID_API_KEY"
+    }
+    
+    {
+      "error": "API key required", 
+      "code": "MISSING_API_KEY"
+    }
+    ```
+  </Tab>
+  <Tab title="Validation Errors">
+    ```json
+    {
+      "error": "Meeting title is required",
+      "code": "VALIDATION_ERROR",
+      "details": {
+        "field": "title",
+        "message": "Title cannot be empty"
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Resource Errors">
+    ```json
+    {
+      "error": "Meeting not found",
+      "code": "MEETING_NOT_FOUND",
+      "details": {
+        "meeting_id": "non-existent-id"
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## Rate Limiting
+
+API requests are rate limited to ensure service stability:
+
+<AccordionGroup>
+  <Accordion icon="clock" title="Rate Limits">
+    - **Standard Plan**: 1,000 requests per hour
+    - **Pro Plan**: 10,000 requests per hour
+    - **Enterprise**: Custom limits
+  </Accordion>
+  <Accordion icon="info-circle" title="Rate Limit Headers">
+    ```
+    X-RateLimit-Limit: 1000
+    X-RateLimit-Remaining: 999
+    X-RateLimit-Reset: 1609459200
+    ```
+  </Accordion>
+  <Accordion icon="warning" title="Rate Limit Exceeded">
+    ```json
+    {
+      "error": "Rate limit exceeded",
+      "code": "RATE_LIMIT_EXCEEDED",
+      "details": {
+        "retry_after": 3600,
+        "limit": 1000
+      }
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Pagination
+
+Large collections are paginated for performance:
+
+### Query Parameters
+
+```
+GET /api/meetings?limit=20&offset=40
+```
+
+<ParamField query="limit" type="integer" default="50">
+  Number of items to return (max 100)
+</ParamField>
+
+<ParamField query="offset" type="integer" default="0">
+  Number of items to skip
+</ParamField>
+
+### Pagination Response
+
+```json
+{
+  "data": [...],
+  "pagination": {
+    "total": 150,
+    "limit": 20,
+    "offset": 40,
+    "has_more": true,
+    "next_offset": 60,
+    "prev_offset": 20
+  }
+}
+```
+
+## Webhooks
+
+Sindre supports webhooks for real-time notifications:
+
+### Webhook Events
+
+<CardGroup cols={2}>
+  <Card title="meeting.processing.completed" icon="microphone">
+    Triggered when meeting audio processing finishes
+  </Card>
+  <Card title="task.created" icon="plus">
+    Triggered when a new task is extracted from a meeting
+  </Card>
+  <Card title="insight.generated" icon="lightbulb">
+    Triggered when new insights are generated
+  </Card>
+  <Card title="integration.connected" icon="plug">
+    Triggered when external service is connected
+  </Card>
+</CardGroup>
+
+### Webhook Payload
+
+```json
+{
+  "event": "meeting.processing.completed",
+  "data": {
+    "meeting_id": "550e8400-e29b-41d4-a716-446655440000",
+    "status": "completed",
+    "tasks_extracted": 5,
+    "insights_generated": 3
+  },
+  "timestamp": "2024-01-15T10:30:00Z",
+  "webhook_id": "wh_1234567890"
+}
+```
+
+## SDKs and Libraries
+
+<Tabs>
+  <Tab title="JavaScript/Node.js">
+    ```bash
+    npm install sindre-api-client
+    ```
+    
+    ```javascript
+    import { SindreAPI } from 'sindre-api-client';
+    
+    const sindre = new SindreAPI({
+      apiKey: process.env.SINDRE_API_KEY
+    });
+    
+    const meetings = await sindre.meetings.list();
+    ```
+  </Tab>
+  <Tab title="Python">
+    ```bash
+    pip install sindre-python
+    ```
+    
+    ```python
+    from sindre import SindreClient
+    
+    client = SindreClient(api_key=os.environ['SINDRE_API_KEY'])
+    meetings = client.meetings.list()
+    ```
+  </Tab>
+  <Tab title="Go">
+    ```bash
+    go get github.com/sindre-org/sindre-go
+    ```
+    
+    ```go
+    import "github.com/sindre-org/sindre-go"
+    
+    client := sindre.NewClient(os.Getenv("SINDRE_API_KEY"))
+    meetings, err := client.Meetings.List()
+    ```
+  </Tab>
+</Tabs>
+
+## Next Steps
+
+Explore the specific endpoint documentation:
+
+<CardGroup cols={2}>
+  <Card
+    title="Meeting Management"
+    icon="microphone"
+    href="/api-reference/meetings"
+  >
+    Create, process, and manage meeting recordings and transcriptions.
+  </Card>
+  <Card
+    title="Task Management"
+    icon="list-check"
+    href="/api-reference/tasks"
+  >
+    Extract, update, and track tasks from meeting content.
+  </Card>
+  <Card
+    title="Strategic Bets"
+    icon="target"
+    href="/api-reference/bets"
+  >
+    Manage high-level initiatives and strategic goals.
+  </Card>
+  <Card
+    title="Search & Insights"
+    icon="search"
+    href="/api-reference/search"
+  >
+    Semantic search across meeting content and generated insights.
+  </Card>
+</CardGroup>

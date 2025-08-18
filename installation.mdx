@@ -1,0 +1,436 @@
+---
+title: "Installation & Setup"
+description: "Complete guide to installing and configuring the Sindre API backend"
+---
+
+# Installation & Setup
+
+This guide covers installing and configuring your own instance of the Sindre API backend for development or production use.
+
+<Warning>
+  This guide is for self-hosted deployments. If you're using Sindre's hosted API, you only need an API key from your dashboard.
+</Warning>
+
+## Prerequisites
+
+Before you begin, ensure you have the following installed and configured:
+
+<AccordionGroup>
+  <Accordion icon="nodejs" title="Node.js & npm">
+    - Node.js 18 or higher
+    - npm or yarn package manager
+    ```bash
+    # Verify installation
+    node --version  # Should be 18.0.0 or higher
+    npm --version
+    ```
+  </Accordion>
+  <Accordion icon="database" title="Database">
+    - Supabase account and project
+    - PostgreSQL database (if not using Supabase)
+    ```bash
+    # Get your Supabase credentials from:
+    # https://supabase.com/dashboard/project/YOUR_PROJECT/settings/api
+    ```
+  </Accordion>
+  <Accordion icon="cloud" title="Cloud Services">
+    - Google Cloud Platform account
+    - OpenAI API account
+    - Pinecone vector database account
+    ```bash
+    # Required for full functionality:
+    # - Google Cloud Storage (audio files)
+    # - Google Cloud Tasks (background processing)
+    # - OpenAI API (transcription & analysis)
+    # - Pinecone (semantic search)
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Installation
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/your-org/sindre-orchestrator.git
+cd sindre-orchestrator
+```
+
+### 2. Install Dependencies
+
+<Tabs>
+  <Tab title="npm">
+    ```bash
+    npm install
+    ```
+  </Tab>
+  <Tab title="yarn">
+    ```bash
+    yarn install
+    ```
+  </Tab>
+</Tabs>
+
+### 3. Environment Configuration
+
+Create a `.env` file in the root directory with the following configuration:
+
+```bash
+# Server Configuration
+PORT=8080
+NODE_ENV=development
+FRONTEND_URL=http://localhost:3000
+
+# Supabase Configuration
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_KEY=your_service_role_key_here
+
+# OpenAI Configuration
+OPENAI_API_KEY=sk-your_openai_api_key_here
+
+# Google Cloud Configuration
+GOOGLE_CLOUD_PROJECT_ID=your-gcp-project-id
+GOOGLE_CLOUD_STORAGE_BUCKET=your-storage-bucket
+GOOGLE_CLOUD_TASKS_QUEUE=your-tasks-queue
+GOOGLE_APPLICATION_CREDENTIALS=./credentials/gcp-service-account.json
+
+# Pinecone Configuration
+PINECONE_API_KEY=your_pinecone_api_key
+PINECONE_ENVIRONMENT=your_pinecone_environment
+PINECONE_INDEX_NAME=sindre-embeddings
+
+# External Service Keys (Optional)
+ASANA_ACCESS_TOKEN=your_asana_token
+LINEAR_API_KEY=your_linear_key
+
+# Slack Integration (Optional)
+SLACK_CLIENT_ID=your_slack_client_id
+SLACK_CLIENT_SECRET=your_slack_client_secret
+SLACK_REDIRECT_URI=http://localhost:8080/api/slack/callback
+
+# Additional Configuration
+CORS_ORIGIN=http://localhost:3000
+JWT_SECRET=your_jwt_secret_for_additional_auth
+```
+
+<Tip>
+  Copy the included `sample.env.prod.yaml` file and customize it for your environment.
+</Tip>
+
+## Service Setup
+
+### Supabase Database Setup
+
+1. **Create a new Supabase project** at [supabase.com](https://supabase.com)
+
+2. **Set up the database schema**:
+   ```bash
+   # Run the database migrations
+   cd supabase
+   npx supabase db push
+   
+   # Or manually run the SQL files from supabase/migrations/
+   ```
+
+3. **Configure Row Level Security (RLS)**:
+   ```sql
+   -- Enable RLS on all tables
+   ALTER TABLE meetings ENABLE ROW LEVEL SECURITY;
+   ALTER TABLE tasks ENABLE ROW LEVEL SECURITY;
+   ALTER TABLE bets ENABLE ROW LEVEL SECURITY;
+   -- ... (continue for all tables)
+   ```
+
+### Google Cloud Platform Setup
+
+<Steps>
+  <Step title="Create GCP Project">
+    1. Create a new project in [Google Cloud Console](https://console.cloud.google.com)
+    2. Enable the following APIs:
+       - Cloud Storage API
+       - Cloud Tasks API
+       - Cloud Resource Manager API
+  </Step>
+  <Step title="Create Service Account">
+    1. Go to IAM & Admin → Service Accounts
+    2. Create a new service account with these roles:
+       - Storage Admin
+       - Cloud Tasks Admin
+    3. Generate and download a JSON key file
+    4. Save it as `credentials/gcp-service-account.json`
+  </Step>
+  <Step title="Create Storage Bucket">
+    ```bash
+    # Create a bucket for audio files
+    gsutil mb gs://your-sindre-audio-bucket
+    
+    # Set up CORS for web uploads
+    gsutil cors set sample-cors-config.json gs://your-sindre-audio-bucket
+    ```
+  </Step>
+  <Step title="Create Cloud Tasks Queue">
+    ```bash
+    gcloud tasks queues create sindre-processing-queue \
+        --location=us-central1
+    ```
+  </Step>
+</Steps>
+
+### OpenAI Setup
+
+1. Get your API key from [platform.openai.com](https://platform.openai.com)
+2. Add billing information to your account
+3. Set usage limits if needed
+
+### Pinecone Setup
+
+<Steps>
+  <Step title="Create Account">
+    Sign up at [pinecone.io](https://www.pinecone.io) and create a new project
+  </Step>
+  <Step title="Create Index">
+    ```bash
+    # Using the Pinecone web console, create an index with:
+    # - Name: sindre-embeddings
+    # - Dimensions: 1536 (for OpenAI embeddings)
+    # - Metric: cosine
+    ```
+  </Step>
+  <Step title="Get API Key">
+    Copy your API key and environment from the Pinecone console
+  </Step>
+</Steps>
+
+## Development Setup
+
+### 1. Start the Development Server
+
+```bash
+npm run dev
+```
+
+The server will start on `http://localhost:8080` with hot reload enabled.
+
+### 2. Verify the Installation
+
+Test that all components are working:
+
+<Tabs>
+  <Tab title="Health Check">
+    ```bash
+    curl http://localhost:8080/health
+    
+    # Expected response:
+    # {"status": "healthy", "timestamp": "2024-01-01T00:00:00.000Z"}
+    ```
+  </Tab>
+  <Tab title="Database Connection">
+    ```bash
+    curl -X POST http://localhost:8080/api/meetings \
+      -H "Authorization: Bearer your_test_token" \
+      -H "Content-Type: application/json" \
+      -d '{"title": "Test Meeting"}'
+    ```
+  </Tab>
+  <Tab title="AI Services">
+    ```bash
+    # This will test OpenAI connectivity
+    curl -X POST http://localhost:8080/api/query/llm \
+      -H "Authorization: Bearer your_test_token" \
+      -H "Content-Type: application/json" \
+      -d '{"query": "Hello, world!"}'
+    ```
+  </Tab>
+</Tabs>
+
+### 3. Run Tests
+
+Ensure everything is working correctly:
+
+```bash
+# Run all tests
+npm test
+
+# Run with coverage
+npm run coverage
+
+# Run specific test files
+npx vitest run tests/meetingService.test.js
+```
+
+## Production Deployment
+
+### Docker Deployment
+
+Build and run using Docker:
+
+```bash
+# Build the Docker image
+docker build -t sindre-orchestrator .
+
+# Run the container
+docker run -p 8080:8080 \
+  --env-file .env \
+  sindre-orchestrator
+```
+
+### Manual Production Setup
+
+<Steps>
+  <Step title="Install Production Dependencies">
+    ```bash
+    npm ci --only=production
+    ```
+  </Step>
+  <Step title="Build (if applicable)">
+    ```bash
+    # If you have a build step
+    npm run build
+    ```
+  </Step>
+  <Step title="Start Production Server">
+    ```bash
+    npm start
+    ```
+  </Step>
+  <Step title="Set up Process Manager">
+    ```bash
+    # Using PM2
+    npm install -g pm2
+    pm2 start index.js --name sindre-orchestrator
+    pm2 save
+    pm2 startup
+    ```
+  </Step>
+</Steps>
+
+### Environment Variables for Production
+
+Update your production environment variables:
+
+```bash
+NODE_ENV=production
+PORT=8080
+FRONTEND_URL=https://your-frontend-domain.com
+
+# Use production database and service URLs
+SUPABASE_URL=https://your-prod-project.supabase.co
+GOOGLE_CLOUD_PROJECT_ID=your-prod-project
+
+# Enable additional security
+CORS_ORIGIN=https://your-frontend-domain.com
+RATE_LIMIT_ENABLED=true
+```
+
+## Configuration Options
+
+### Advanced Configuration
+
+The application supports additional configuration through `src/config/main-config.js`:
+
+<Tabs>
+  <Tab title="Rate Limiting">
+    ```javascript
+    // Customize rate limiting
+    rateLimit: {
+      windowMs: 15 * 60 * 1000, // 15 minutes
+      max: 100, // limit each IP to 100 requests per windowMs
+      skip: (req) => req.path.startsWith('/health')
+    }
+    ```
+  </Tab>
+  <Tab title="CORS Settings">
+    ```javascript
+    // CORS configuration
+    cors: {
+      origin: process.env.CORS_ORIGIN?.split(',') || '*',
+      credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+    }
+    ```
+  </Tab>
+  <Tab title="File Upload Limits">
+    ```javascript
+    // File upload configuration
+    fileUpload: {
+      maxSize: 100 * 1024 * 1024, // 100MB
+      allowedTypes: ['audio/mpeg', 'audio/wav', 'audio/x-m4a'],
+      tempDir: './tmp'
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion icon="warning" title="Common Installation Issues">
+    **Node.js version error**: Make sure you're using Node.js 18 or higher
+    
+    **Permission errors**: Run with appropriate permissions or use `sudo` where necessary
+    
+    **Port already in use**: Change the PORT environment variable or stop conflicting services
+  </Accordion>
+  <Accordion icon="database" title="Database Connection Issues">
+    **Supabase connection failed**: Verify your SUPABASE_URL and SUPABASE_KEY
+    
+    **RLS policies**: Ensure Row Level Security policies are properly configured
+    
+    **Migration errors**: Run migrations manually from the supabase directory
+  </Accordion>
+  <Accordion icon="cloud" title="Cloud Service Issues">
+    **Google Cloud authentication**: Verify your service account JSON file path
+    
+    **Storage bucket access**: Ensure your service account has Storage Admin role
+    
+    **OpenAI API limits**: Check your usage limits and billing status
+    
+    **Pinecone index not found**: Verify your index name and environment
+  </Accordion>
+  <Accordion icon="gear" title="Performance Issues">
+    **Slow processing**: Check your OpenAI API tier and rate limits
+    
+    **Memory issues**: Consider increasing Node.js memory limit with `--max-old-space-size`
+    
+    **Database performance**: Add appropriate indexes for your query patterns
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+Once your installation is complete:
+
+<CardGroup cols={2}>
+  <Card
+    title="Architecture Guide"
+    icon="sitemap"
+    href="/architecture"
+  >
+    Understand the system architecture and component interactions.
+  </Card>
+  <Card
+    title="Development Guide"
+    icon="code"
+    href="/development/mvc-architecture"
+  >
+    Learn about the MVC structure and development patterns.
+  </Card>
+  <Card
+    title="API Reference"
+    icon="book"
+    href="/api-reference/introduction"
+  >
+    Explore the complete API documentation.
+  </Card>
+  <Card
+    title="Integration Setup"
+    icon="puzzle-piece"
+    href="/integrations/overview"
+  >
+    Connect with external services and platforms.
+  </Card>
+</CardGroup>
+
+<Note>
+  **Need help?** Join our [community Discord](https://discord.gg/sindre) or contact support at support@sindre.com.
+</Note>

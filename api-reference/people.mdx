@@ -1,0 +1,664 @@
+---
+title: "People Management"
+description: "API endpoints for managing people and contacts within your organization and workspace"
+---
+
+# People Management API
+
+The People Management API provides comprehensive contact lifecycle management, allowing you to create, retrieve, update, and delete people within your workspace. People can be associated with organizations, meetings, and other workspace entities for complete relationship tracking.
+
+## API Endpoints Overview
+
+<CardGroup cols={2}>
+  <Card title="Core People Operations" icon="user">
+    - `GET /api/people/all` - Get all people
+    - `GET /api/people/:id` - Get person by ID
+    - `POST /api/people` - Create person
+    - `PUT /api/people/:id` - Update person
+    - `DELETE /api/people/:id` - Delete person
+  </Card>
+  <Card title="Key Features" icon="users">
+    - Space-based access control
+    - Organization relationships
+    - Meeting associations
+    - Contact information management
+    - Workspace integration
+  </Card>
+</CardGroup>
+
+## Person Object
+
+The person object represents a contact within your workspace with comprehensive relationship tracking:
+
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "full_name": "Sarah Johnson",
+  "email": "sarah.johnson@example.com",
+  "title": "Senior Product Manager",
+  "phone_number": "+1-555-0123",
+  "content": "Key stakeholder for product strategy discussions. Previously worked at TechCorp for 8 years.",
+  "outside_organisation_id": "org-uuid-here",
+  "space_id": "space-uuid-here",
+  "user_id": "user-uuid-here",
+  "meetings_title": [
+    "Product Strategy Q4",
+    "Customer Feedback Review",
+    "Roadmap Planning Session"
+  ],
+  "created_at": "2024-01-15T10:30:00Z",
+  "organisation": {
+    "id": "org-uuid-here",
+    "name": "Acme Corporation",
+    "source": {
+      "platform": "manual",
+      "imported_from": "contacts"
+    },
+    "type": {
+      "name": "Customer",
+      "description": "External customer organization"
+    }
+  }
+}
+```
+
+### Person Fields
+
+<AccordionGroup>
+  <Accordion icon="id-card" title="Basic Information">
+    **full_name**: Person's complete name  
+    **email**: Primary email address  
+    **title**: Job title or role  
+    **phone_number**: Contact phone number  
+    **content**: Additional notes or description about the person
+  </Accordion>
+  <Accordion icon="building" title="Organization Relationship">
+    **outside_organisation_id**: UUID linking to the organizations table  
+    **organisation**: Complete organization object with type and source information
+  </Accordion>
+  <Accordion icon="users" title="Workspace Context">
+    **space_id**: Workspace this person belongs to  
+    **user_id**: User who created this person record  
+    **meetings_title**: Array of meeting titles this person has participated in
+  </Accordion>
+  <Accordion icon="calendar" title="Timestamps">
+    **created_at**: When the person record was created  
+    **id**: Auto-generated UUID identifier
+  </Accordion>
+</AccordionGroup>
+
+## Get All People
+
+Retrieve all people accessible to the authenticated user, including people from their spaces and related organizations.
+
+<CodeGroup>
+
+```javascript GET /api/people/all
+const response = await fetch('https://api.sindre.com/api/people/all', {
+  method: 'GET',
+  headers: {
+    'Authorization': `Bearer ${SINDRE_API_KEY}`,
+    'Content-Type': 'application/json'
+  }
+});
+
+const people = await response.json();
+```
+
+```python
+response = requests.get(
+    'https://api.sindre.com/api/people/all',
+    headers={
+        'Authorization': f'Bearer {SINDRE_API_KEY}',
+        'Content-Type': 'application/json'
+    }
+)
+
+people = response.json()
+```
+
+```bash
+curl -X GET https://api.sindre.com/api/people/all \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json"
+```
+
+</CodeGroup>
+
+### Response
+
+Returns an array of person objects accessible to the user, including those from spaces they belong to, sorted by creation date (newest first).
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "person-1-uuid",
+      "full_name": "Sarah Johnson",
+      "email": "sarah@example.com",
+      "title": "Senior Product Manager",
+      "organisation": {
+        "id": "org-uuid",
+        "name": "Acme Corporation",
+        "type": {
+          "name": "Customer"
+        }
+      },
+      "meetings_title": [
+        "Product Strategy Q4"
+      ],
+      "created_at": "2024-01-15T10:30:00Z"
+    },
+    {
+      "id": "person-2-uuid",
+      "full_name": "John Smith",
+      "email": "john@techcorp.com",
+      "title": "Engineering Lead",
+      "organisation": {
+        "id": "org-2-uuid",
+        "name": "TechCorp Solutions"
+      }
+    }
+  ]
+}
+```
+
+## Get Person by ID
+
+Retrieve a specific person by their ID with complete details including organization relationships.
+
+<CodeGroup>
+
+```javascript GET /api/people/:id
+const response = await fetch(`https://api.sindre.com/api/people/${personId}`, {
+  method: 'GET',
+  headers: {
+    'Authorization': `Bearer ${SINDRE_API_KEY}`,
+    'Content-Type': 'application/json'
+  }
+});
+
+const person = await response.json();
+```
+
+```python
+response = requests.get(
+    f'https://api.sindre.com/api/people/{person_id}',
+    headers={
+        'Authorization': f'Bearer {SINDRE_API_KEY}',
+        'Content-Type': 'application/json'
+    }
+)
+
+person = response.json()
+```
+
+```bash
+curl -X GET https://api.sindre.com/api/people/550e8400-e29b-41d4-a716-446655440000 \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json"
+```
+
+</CodeGroup>
+
+### Path Parameters
+
+<ParamField path="id" type="string" required>
+  The person ID to retrieve (UUID format)
+</ParamField>
+
+### Response
+
+Returns the complete person object with all related information including organization details.
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "full_name": "Sarah Johnson",
+    "email": "sarah.johnson@example.com",
+    "title": "Senior Product Manager",
+    "phone_number": "+1-555-0123",
+    "content": "Key stakeholder for product strategy discussions.",
+    "organisation": {
+      "id": "org-uuid-here",
+      "name": "Acme Corporation",
+      "source": {
+        "platform": "manual"
+      },
+      "type": {
+        "name": "Customer",
+        "description": "External customer organization"
+      }
+    },
+    "meetings_title": [
+      "Product Strategy Q4",
+      "Customer Feedback Review"
+    ],
+    "created_at": "2024-01-15T10:30:00Z"
+  }
+}
+```
+
+## Create Person
+
+Create a new person record. The person will be automatically associated with the authenticated user and their default space.
+
+<CodeGroup>
+
+```javascript POST /api/people
+const person = await fetch('https://api.sindre.com/api/people', {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${SINDRE_API_KEY}`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    full_name: 'Sarah Johnson',
+    email: 'sarah.johnson@example.com',
+    title: 'Senior Product Manager',
+    phone_number: '+1-555-0123',
+    content: 'Key stakeholder for product strategy discussions.',
+    outside_organisation_id: 'org-uuid-here'
+  })
+});
+
+const personData = await person.json();
+```
+
+```python
+import requests
+
+response = requests.post(
+    'https://api.sindre.com/api/people',
+    headers={
+        'Authorization': f'Bearer {SINDRE_API_KEY}',
+        'Content-Type': 'application/json'
+    },
+    json={
+        'full_name': 'Sarah Johnson',
+        'email': 'sarah.johnson@example.com',
+        'title': 'Senior Product Manager',
+        'phone_number': '+1-555-0123',
+        'content': 'Key stakeholder for product strategy discussions.',
+        'outside_organisation_id': 'org-uuid-here'
+    }
+)
+
+person = response.json()
+```
+
+```bash
+curl -X POST https://api.sindre.com/api/people \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "full_name": "Sarah Johnson",
+    "email": "sarah.johnson@example.com",
+    "title": "Senior Product Manager",
+    "phone_number": "+1-555-0123",
+    "content": "Key stakeholder for product strategy discussions.",
+    "outside_organisation_id": "org-uuid-here"
+  }'
+```
+
+</CodeGroup>
+
+### Request Body
+
+<ParamField body="full_name" type="string">
+  Person's complete name. Required if email is not provided.
+</ParamField>
+
+<ParamField body="email" type="string">
+  Primary email address. Required if full_name is not provided.
+</ParamField>
+
+<ParamField body="title" type="string">
+  Job title or role within their organization
+</ParamField>
+
+<ParamField body="phone_number" type="string">
+  Contact phone number in any format
+</ParamField>
+
+<ParamField body="content" type="string">
+  Additional notes, description, or context about the person
+</ParamField>
+
+<ParamField body="outside_organisation_id" type="string">
+  UUID of the organization this person belongs to
+</ParamField>
+
+<ParamField body="meetings_title" type="array">
+  Array of meeting titles this person has participated in
+</ParamField>
+
+<Note>
+  **Validation Requirements**: Either `full_name` or `email` must be provided. The person will be automatically assigned to the authenticated user's default space.
+</Note>
+
+### Response
+
+Returns the created person object with status `201 Created`.
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "full_name": "Sarah Johnson",
+    "email": "sarah.johnson@example.com",
+    "title": "Senior Product Manager",
+    "phone_number": "+1-555-0123",
+    "content": "Key stakeholder for product strategy discussions.",
+    "outside_organisation_id": "org-uuid-here",
+    "space_id": "space-uuid-here",
+    "user_id": "user-uuid-here",
+    "meetings_title": [],
+    "created_at": "2024-01-16T10:30:00Z"
+  }
+}
+```
+
+## Update Person
+
+Update an existing person's information. You can update any combination of fields.
+
+<CodeGroup>
+
+```javascript PUT /api/people/:id
+const response = await fetch(`https://api.sindre.com/api/people/${personId}`, {
+  method: 'PUT',
+  headers: {
+    'Authorization': `Bearer ${SINDRE_API_KEY}`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    title: 'VP of Product',
+    phone_number: '+1-555-9876',
+    content: 'Promoted to VP role. Leading product strategy across all divisions.'
+  })
+});
+
+const updatedPerson = await response.json();
+```
+
+```python
+response = requests.put(
+    f'https://api.sindre.com/api/people/{person_id}',
+    headers={
+        'Authorization': f'Bearer {SINDRE_API_KEY}',
+        'Content-Type': 'application/json'
+    },
+    json={
+        'title': 'VP of Product',
+        'phone_number': '+1-555-9876',
+        'content': 'Promoted to VP role. Leading product strategy across all divisions.'
+    }
+)
+
+person = response.json()
+```
+
+```bash
+curl -X PUT https://api.sindre.com/api/people/550e8400-e29b-41d4-a716-446655440000 \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "VP of Product",
+    "phone_number": "+1-555-9876",
+    "content": "Promoted to VP role. Leading product strategy across all divisions."
+  }'
+```
+
+</CodeGroup>
+
+### Path Parameters
+
+<ParamField path="id" type="string" required>
+  The person ID to update (UUID format)
+</ParamField>
+
+### Request Body
+
+<ParamField body="full_name" type="string">
+  Updated person's name
+</ParamField>
+
+<ParamField body="email" type="string">
+  Updated email address
+</ParamField>
+
+<ParamField body="title" type="string">
+  Updated job title or role
+</ParamField>
+
+<ParamField body="phone_number" type="string">
+  Updated contact phone number
+</ParamField>
+
+<ParamField body="content" type="string">
+  Updated notes or description
+</ParamField>
+
+<ParamField body="outside_organisation_id" type="string">
+  Updated organization UUID
+</ParamField>
+
+<ParamField body="meetings_title" type="array">
+  Updated array of meeting titles
+</ParamField>
+
+### Response
+
+Returns the updated person object with status `200 OK`.
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "full_name": "Sarah Johnson",
+    "email": "sarah.johnson@example.com",
+    "title": "VP of Product",
+    "phone_number": "+1-555-9876",
+    "content": "Promoted to VP role. Leading product strategy across all divisions.",
+    "created_at": "2024-01-15T10:30:00Z"
+  }
+}
+```
+
+## Delete Person
+
+Permanently delete a person record. This action cannot be undone.
+
+<CodeGroup>
+
+```javascript DELETE /api/people/:id
+const response = await fetch(`https://api.sindre.com/api/people/${personId}`, {
+  method: 'DELETE',
+  headers: {
+    'Authorization': `Bearer ${SINDRE_API_KEY}`,
+    'Content-Type': 'application/json'
+  }
+});
+
+const result = await response.json();
+```
+
+```python
+response = requests.delete(
+    f'https://api.sindre.com/api/people/{person_id}',
+    headers={
+        'Authorization': f'Bearer {SINDRE_API_KEY}',
+        'Content-Type': 'application/json'
+    }
+)
+
+result = response.json()
+```
+
+```bash
+curl -X DELETE https://api.sindre.com/api/people/550e8400-e29b-41d4-a716-446655440000 \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json"
+```
+
+</CodeGroup>
+
+### Path Parameters
+
+<ParamField path="id" type="string" required>
+  The person ID to delete (UUID format)
+</ParamField>
+
+### Response
+
+Returns success confirmation with status `204 No Content`.
+
+```json
+{
+  "success": true,
+  "message": "Person deleted successfully"
+}
+```
+
+<Warning>
+  **Permanent deletion**: This action cannot be undone. The person record and all associated relationships will be permanently removed from the database.
+</Warning>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion icon="warning" title="400 Bad Request">
+    ```json
+    {
+      "success": false,
+      "message": "Failed to create person",
+      "error": "Invalid personData: must have a full name or email."
+    }
+    ```
+    
+    ```json
+    {
+      "success": false,
+      "message": "Failed to update person",
+      "error": "Invalid personId: must be a non-empty string."
+    }
+    ```
+  </Accordion>
+  <Accordion icon="lock" title="403 Forbidden">
+    ```json
+    {
+      "success": false,
+      "message": "Failed to fetch person",
+      "error": "You cannot access this person"
+    }
+    ```
+    
+    ```json
+    {
+      "error": "Invalid Supabase user session"
+    }
+    ```
+  </Accordion>
+  <Accordion icon="search" title="404 Not Found">
+    ```json
+    {
+      "success": false,
+      "message": "Failed to fetch person by ID",
+      "error": "Person not found"
+    }
+    ```
+    
+    ```json
+    {
+      "success": false,
+      "message": "Failed to delete person",
+      "error": "Person not found"
+    }
+    ```
+  </Accordion>
+  <Accordion icon="server" title="500 Internal Server Error">
+    ```json
+    {
+      "success": false,
+      "message": "Failed to fetch people",
+      "error": "Database connection error"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Best Practices
+
+<Tabs>
+  <Tab title="Person Creation">
+    - Always provide either `full_name` or `email` for identification
+    - Use descriptive content to capture context about the person
+    - Link to organizations when known to maintain relationships
+    - Include job titles to understand roles and responsibilities
+    - Keep contact information current and accurate
+  </Tab>
+  <Tab title="Data Management">
+    - Regularly update person information as roles and contacts change
+    - Use the content field to track important context and history
+    - Maintain organization relationships for better contact organization
+    - Update meeting associations to track engagement history
+    - Clean up duplicate or outdated person records periodically
+  </Tab>
+  <Tab title="Access Control">
+    - People are scoped to workspaces for data isolation
+    - Users can only access people from spaces they belong to
+    - Organization relationships provide additional context but respect workspace boundaries
+    - Meeting associations help track engagement within workspace context
+  </Tab>
+</Tabs>
+
+## Integration Workflows
+
+### Contact Import Flow
+
+1. **Preparation**: Gather contact data from external sources (CRM, email, etc.)
+2. **Organization Setup**: Create or identify existing organizations first
+3. **Person Creation**: Create person records with organization associations
+4. **Validation**: Verify contact information and relationships
+5. **Enhancement**: Add context and meeting history as available
+
+### Meeting Integration Flow
+
+1. **Meeting Processing**: After meetings are processed, identify participants
+2. **Person Matching**: Match email addresses to existing person records
+3. **Association**: Add meeting titles to `meetings_title` array
+4. **Context Enhancement**: Update person content with meeting insights
+5. **Relationship Tracking**: Monitor engagement patterns and frequency
+
+### Organization Management Flow
+
+1. **Person Review**: Regularly review people without organization associations
+2. **Organization Creation**: Create organization records for unaffiliated people
+3. **Relationship Building**: Link people to appropriate organizations
+4. **Data Consistency**: Ensure organization information is current and accurate
+5. **Reporting**: Use organization relationships for contact segmentation and analysis
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="Organization Management"
+    icon="building"
+    href="/api-reference/organizations"
+  >
+    Manage organizations and company relationships for better contact organization.
+  </Card>
+  <Card
+    title="Meeting Management"
+    icon="video"
+    href="/api-reference/meetings"
+  >
+    Understand how people are associated with meetings and conversation tracking.
+  </Card>
+</CardGroup>

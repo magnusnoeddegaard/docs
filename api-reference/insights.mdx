@@ -1,0 +1,1325 @@
+---
+title: "Insights Management"
+description: "API endpoints for managing insights extracted from meetings and creating actionable intelligence"
+---
+
+# Insights Management API
+
+The Insights Management API provides comprehensive insight lifecycle management, including AI-powered insight extraction from meeting transcriptions, manual insight creation, categorization, and task connections for actionable intelligence.
+
+## API Endpoints Overview
+
+<CardGroup cols={2}>
+  <Card title="Core Insight Operations" icon="lightbulb">
+    - `POST /api/insights` - Create insight
+    - `GET /api/insights/:insightId` - Get insight details
+    - `PUT /api/insights/:insightId` - Update insight
+    - `DELETE /api/insights/:insightId` - Delete insight
+    - `DELETE /api/insights/delete-multiple` - Delete multiple insights
+  </Card>
+  <Card title="Insight Retrieval" icon="search">
+    - `GET /api/insights` - Get user's insights
+    - `GET /api/insights/task-insights` - Get task insights
+    - `GET /api/insights/meeting-insights` - Get meeting insights
+    - `GET /api/insights/unconnected-insights` - Get unconnected insights
+  </Card>
+  <Card title="Insight Metadata" icon="tags">
+    - `GET /api/insights/priorities` - Get priorities
+    - `GET /api/insights/types` - Get types
+    - `GET /api/insights/statuses` - Get statuses
+    - `PUT /api/insights/:insightId/priority/:priorityId` - Update priority
+    - `PUT /api/insights/:insightId/type/:typeId` - Update type
+    - `PUT /api/insights/:insightId/status/:statusId` - Update status
+  </Card>
+  <Card title="Task Connections" icon="link">
+    - `POST /api/insights/task-connection` - Connect to tasks
+    - `POST /api/insights/unconnect-insights-from-task` - Disconnect from task
+  </Card>
+</CardGroup>
+
+## Insight Object
+
+The insight object represents actionable intelligence extracted from meetings or created manually:
+
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "name": "Customer feedback on authentication flow",
+  "direct_quote": "The login process is too complex, users are dropping off",
+  "details": "Multiple customers mentioned difficulty with the current authentication system during user interviews. This suggests we need to simplify the login flow and consider implementing social login options.",
+  "type_id": 1,
+  "priority_id": 2,
+  "status_id": 1,
+  "type": {
+    "id": 1,
+    "name": "User Feedback",
+    "description": "Direct feedback from users or customers"
+  },
+  "priority": {
+    "id": 2,
+    "name": "high"
+  },
+  "status": {
+    "id": 1,
+    "name": "new"
+  },
+  "person": {
+    "id": "person-uuid-here",
+    "full_name": "Sarah Johnson"
+  },
+  "user_id": "user-uuid-here",
+  "space_id": "space-uuid-here",
+  "person_id": "person-uuid-here",
+  "source_bot_id": "bot-meeting-123",
+  "disabled": false,
+  "tasks": [
+    {
+      "id": "task-uuid-here",
+      "name": "Implement social login options",
+      "status_id": 1
+    }
+  ],
+  "created_at": "2024-01-15T10:30:00Z",
+  "updated_at": "2024-01-16T09:15:00Z"
+}
+```
+
+### Insight Types
+
+Insight types categorize the nature of the insight and include detailed type objects:
+
+<AccordionGroup>
+  <Accordion icon="user" title="User Feedback">
+    Direct feedback from users, customers, or stakeholders
+  </Accordion>
+  <Accordion icon="chart-line" title="Performance Insight">
+    Insights related to system performance, metrics, or analytics
+  </Accordion>
+  <Accordion icon="exclamation" title="Issue Identification">
+    Problems, bugs, or technical issues identified during meetings
+  </Accordion>
+  <Accordion icon="lightbulb" title="Feature Request">
+    New feature ideas or enhancement suggestions
+  </Accordion>
+  <Accordion icon="target" title="Strategic Decision">
+    High-level decisions or strategic direction changes
+  </Accordion>
+</AccordionGroup>
+
+### Priority Levels
+
+Insight priorities help determine importance and urgency:
+
+<CardGroup cols={4}>
+  <Card title="Low" icon="arrow-down">
+    Nice to know information
+  </Card>
+  <Card title="Medium" icon="minus">
+    Important but not urgent
+  </Card>
+  <Card title="High" icon="arrow-up">
+    Important and should be acted upon
+  </Card>
+  <Card title="Critical" icon="exclamation">
+    Immediate attention required
+  </Card>
+</CardGroup>
+
+### Status Types
+
+Insight statuses track the lifecycle and processing state:
+
+<CardGroup cols={3}>
+  <Card title="New" icon="plus">
+    Recently extracted or created
+  </Card>
+  <Card title="Reviewed" icon="eye">
+    Has been reviewed by stakeholders
+  </Card>
+  <Card title="Actioned" icon="check">
+    Actions have been taken based on this insight
+  </Card>
+</CardGroup>
+
+## Get User Insights
+
+Retrieve all insights accessible to the authenticated user, including insights from their spaces.
+
+<CodeGroup>
+
+```javascript GET /api/insights
+const response = await fetch('https://api.sindre.com/api/insights', {
+  method: 'GET',
+  headers: {
+    'Authorization': `Bearer ${SINDRE_API_KEY}`,
+    'Content-Type': 'application/json'
+  }
+});
+
+const insights = await response.json();
+```
+
+```python
+response = requests.get(
+    'https://api.sindre.com/api/insights',
+    headers={
+        'Authorization': f'Bearer {SINDRE_API_KEY}',
+        'Content-Type': 'application/json'
+    }
+)
+
+insights = response.json()
+```
+
+```bash
+curl -X GET https://api.sindre.com/api/insights \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json"
+```
+
+</CodeGroup>
+
+### Response
+
+Returns an array of insight objects accessible to the user, including insights from spaces they belong to, sorted by creation date (newest first).
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "insight-1",
+      "name": "Customer feedback on mobile app",
+      "type": {
+        "name": "User Feedback"
+      },
+      "priority": {
+        "name": "high"
+      },
+      "status": {
+        "name": "new"
+      }
+    }
+  ]
+}
+```
+
+## Get Insight by ID
+
+Retrieve a specific insight by its ID with complete details including connected tasks.
+
+<CodeGroup>
+
+```javascript GET /api/insights/:insightId
+const response = await fetch(`https://api.sindre.com/api/insights/${insightId}`, {
+  method: 'GET',
+  headers: {
+    'Authorization': `Bearer ${SINDRE_API_KEY}`,
+    'Content-Type': 'application/json'
+  }
+});
+
+const insight = await response.json();
+```
+
+```python
+response = requests.get(
+    f'https://api.sindre.com/api/insights/{insight_id}',
+    headers={
+        'Authorization': f'Bearer {SINDRE_API_KEY}',
+        'Content-Type': 'application/json'
+    }
+)
+
+insight = response.json()
+```
+
+```bash
+curl -X GET https://api.sindre.com/api/insights/550e8400-e29b-41d4-a716-446655440000 \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json"
+```
+
+</CodeGroup>
+
+### Path Parameters
+
+<ParamField path="insightId" type="string" required>
+  The insight ID to retrieve (UUID format)
+</ParamField>
+
+### Response
+
+Returns the complete insight object with all related information including connected tasks.
+
+## Get Insight Types
+
+Retrieve all available insight types for categorization.
+
+<CodeGroup>
+
+```javascript GET /api/insights/types
+const response = await fetch('https://api.sindre.com/api/insights/types', {
+  method: 'GET',
+  headers: {
+    'Authorization': `Bearer ${SINDRE_API_KEY}`,
+    'Content-Type': 'application/json'
+  }
+});
+
+const types = await response.json();
+```
+
+```python
+response = requests.get(
+    'https://api.sindre.com/api/insights/types',
+    headers={
+        'Authorization': f'Bearer {SINDRE_API_KEY}',
+        'Content-Type': 'application/json'
+    }
+)
+
+types = response.json()
+```
+
+```bash
+curl -X GET https://api.sindre.com/api/insights/types \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json"
+```
+
+</CodeGroup>
+
+### Response
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "name": "User Feedback",
+      "description": "Direct feedback from users or customers"
+    },
+    {
+      "id": 2,
+      "name": "Performance Insight",
+      "description": "Insights related to system performance and metrics"
+    },
+    {
+      "id": 3,
+      "name": "Issue Identification",
+      "description": "Problems or technical issues identified"
+    }
+  ]
+}
+```
+
+## Get Insight Priorities
+
+Retrieve all available insight priorities.
+
+<CodeGroup>
+
+```javascript GET /api/insights/priorities
+const response = await fetch('https://api.sindre.com/api/insights/priorities', {
+  method: 'GET',
+  headers: {
+    'Authorization': `Bearer ${SINDRE_API_KEY}`,
+    'Content-Type': 'application/json'
+  }
+});
+
+const priorities = await response.json();
+```
+
+```python
+response = requests.get(
+    'https://api.sindre.com/api/insights/priorities',
+    headers={
+        'Authorization': f'Bearer {SINDRE_API_KEY}',
+        'Content-Type': 'application/json'
+    }
+)
+
+priorities = response.json()
+```
+
+```bash
+curl -X GET https://api.sindre.com/api/insights/priorities \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json"
+```
+
+</CodeGroup>
+
+### Response
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "name": "low"
+    },
+    {
+      "id": 2,
+      "name": "medium"
+    },
+    {
+      "id": 3,
+      "name": "high"
+    },
+    {
+      "id": 4,
+      "name": "critical"
+    }
+  ]
+}
+```
+
+## Get Insight Statuses
+
+Retrieve all available insight statuses.
+
+<CodeGroup>
+
+```javascript GET /api/insights/statuses
+const response = await fetch('https://api.sindre.com/api/insights/statuses', {
+  method: 'GET',
+  headers: {
+    'Authorization': `Bearer ${SINDRE_API_KEY}`,
+    'Content-Type': 'application/json'
+  }
+});
+
+const statuses = await response.json();
+```
+
+```python
+response = requests.get(
+    'https://api.sindre.com/api/insights/statuses',
+    headers={
+        'Authorization': f'Bearer {SINDRE_API_KEY}',
+        'Content-Type': 'application/json'
+    }
+)
+
+statuses = response.json()
+```
+
+```bash
+curl -X GET https://api.sindre.com/api/insights/statuses \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json"
+```
+
+</CodeGroup>
+
+### Response
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "name": "new"
+    },
+    {
+      "id": 2,
+      "name": "reviewed"
+    },
+    {
+      "id": 3,
+      "name": "actioned"
+    }
+  ]
+}
+```
+
+## Create Insight
+
+Create a new insight manually. Insights can also be automatically extracted from meeting transcriptions.
+
+<CodeGroup>
+
+```javascript POST /api/insights
+const insight = await fetch('https://api.sindre.com/api/insights', {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${SINDRE_API_KEY}`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    name: 'Customer feedback on authentication flow',
+    direct_quote: 'The login process is too complex, users are dropping off',
+    details: 'Multiple customers mentioned difficulty with the current authentication system',
+    type_id: 1,
+    priority_id: 3,
+    status_id: 1,
+    person_id: 'person-uuid-here',
+    task_id: 'task-uuid-here'
+  })
+});
+
+const insightData = await insight.json();
+```
+
+```python
+import requests
+
+response = requests.post(
+    'https://api.sindre.com/api/insights',
+    headers={
+        'Authorization': f'Bearer {SINDRE_API_KEY}',
+        'Content-Type': 'application/json'
+    },
+    json={
+        'name': 'Customer feedback on authentication flow',
+        'direct_quote': 'The login process is too complex, users are dropping off',
+        'details': 'Multiple customers mentioned difficulty with the current authentication system',
+        'type_id': 1,
+        'priority_id': 3,
+        'status_id': 1,
+        'person_id': 'person-uuid-here',
+        'task_id': 'task-uuid-here'
+    }
+)
+
+insight = response.json()
+```
+
+```bash
+curl -X POST https://api.sindre.com/api/insights \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Customer feedback on authentication flow",
+    "direct_quote": "The login process is too complex, users are dropping off",
+    "details": "Multiple customers mentioned difficulty with the current authentication system",
+    "type_id": 1,
+    "priority_id": 3,
+    "status_id": 1,
+    "person_id": "person-uuid-here"
+  }'
+```
+
+</CodeGroup>
+
+### Request Body
+
+<ParamField body="name" type="string" required>
+  Clear, descriptive insight name
+</ParamField>
+
+<ParamField body="direct_quote" type="string">
+  Exact quote or direct statement that led to this insight
+</ParamField>
+
+<ParamField body="details" type="string">
+  Detailed description and context for the insight
+</ParamField>
+
+<ParamField body="type_id" type="integer" default="3">
+  Insight type ID (1=User Feedback, 2=Performance, 3=Issue, etc.)
+</ParamField>
+
+<ParamField body="priority_id" type="integer" default="1">
+  Insight priority ID (1=low, 2=medium, 3=high, 4=critical)
+</ParamField>
+
+<ParamField body="status_id" type="integer" default="1">
+  Insight status ID (1=new, 2=reviewed, 3=actioned)
+</ParamField>
+
+<ParamField body="person_id" type="string">
+  UUID of the person who provided this insight
+</ParamField>
+
+<ParamField body="source_bot_id" type="string">
+  Bot ID if this insight was extracted from a meeting
+</ParamField>
+
+<ParamField body="task_id" type="string">
+  Task ID to automatically connect this insight to a task
+</ParamField>
+
+### Response
+
+Returns the created insight object with status `200 OK`.
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "name": "Customer feedback on authentication flow",
+    "type": {
+      "name": "User Feedback"
+    },
+    "created_at": "2024-01-16T10:30:00Z"
+  }
+}
+```
+
+## Update Insight
+
+Update multiple fields of an insight at once.
+
+<CodeGroup>
+
+```javascript PUT /api/insights/:insightId
+const response = await fetch(`https://api.sindre.com/api/insights/${insightId}`, {
+  method: 'PUT',
+  headers: {
+    'Authorization': `Bearer ${SINDRE_API_KEY}`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    name: 'Updated insight name',
+    details: 'Updated insight details with more context',
+    priority_id: 4,
+    status_id: 2
+  })
+});
+
+const updatedInsight = await response.json();
+```
+
+```python
+response = requests.put(
+    f'https://api.sindre.com/api/insights/{insight_id}',
+    headers={
+        'Authorization': f'Bearer {SINDRE_API_KEY}',
+        'Content-Type': 'application/json'
+    },
+    json={
+        'name': 'Updated insight name',
+        'details': 'Updated insight details with more context',
+        'priority_id': 4,
+        'status_id': 2
+    }
+)
+
+insight = response.json()
+```
+
+```bash
+curl -X PUT https://api.sindre.com/api/insights/550e8400-e29b-41d4-a716-446655440000 \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Updated insight name",
+    "details": "Updated insight details with more context",
+    "priority_id": 4,
+    "status_id": 2
+  }'
+```
+
+</CodeGroup>
+
+### Request Body
+
+<ParamField body="name" type="string">
+  Updated insight name
+</ParamField>
+
+<ParamField body="direct_quote" type="string">
+  Updated direct quote
+</ParamField>
+
+<ParamField body="details" type="string">
+  Updated insight details
+</ParamField>
+
+<ParamField body="type_id" type="integer">
+  Updated type ID
+</ParamField>
+
+<ParamField body="priority_id" type="integer">
+  Updated priority ID
+</ParamField>
+
+<ParamField body="status_id" type="integer">
+  Updated status ID
+</ParamField>
+
+<ParamField body="person_id" type="string">
+  Updated person ID
+</ParamField>
+
+## Update Insight Priority
+
+Update the priority of a specific insight using its priority ID.
+
+<CodeGroup>
+
+```javascript PUT /api/insights/:insightId/priority/:priorityId
+const response = await fetch(`https://api.sindre.com/api/insights/${insightId}/priority/${priorityId}`, {
+  method: 'PUT',
+  headers: {
+    'Authorization': `Bearer ${SINDRE_API_KEY}`,
+    'Content-Type': 'application/json'
+  }
+});
+
+const updatedInsight = await response.json();
+```
+
+```python
+response = requests.put(
+    f'https://api.sindre.com/api/insights/{insight_id}/priority/{priority_id}',
+    headers={
+        'Authorization': f'Bearer {SINDRE_API_KEY}',
+        'Content-Type': 'application/json'
+    }
+)
+
+insight = response.json()
+```
+
+```bash
+curl -X PUT https://api.sindre.com/api/insights/550e8400-e29b-41d4-a716-446655440000/priority/3 \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json"
+```
+
+</CodeGroup>
+
+### Path Parameters
+
+<ParamField path="insightId" type="string" required>
+  The insight ID to update (UUID format)
+</ParamField>
+
+<ParamField path="priorityId" type="string" required>
+  The priority ID to set (1=low, 2=medium, 3=high, 4=critical)
+</ParamField>
+
+## Update Insight Type
+
+Update the type of a specific insight using its type ID.
+
+<CodeGroup>
+
+```javascript PUT /api/insights/:insightId/type/:typeId
+const response = await fetch(`https://api.sindre.com/api/insights/${insightId}/type/${typeId}`, {
+  method: 'PUT',
+  headers: {
+    'Authorization': `Bearer ${SINDRE_API_KEY}`,
+    'Content-Type': 'application/json'
+  }
+});
+
+const updatedInsight = await response.json();
+```
+
+```python
+response = requests.put(
+    f'https://api.sindre.com/api/insights/{insight_id}/type/{type_id}',
+    headers={
+        'Authorization': f'Bearer {SINDRE_API_KEY}',
+        'Content-Type': 'application/json'
+    }
+)
+
+insight = response.json()
+```
+
+```bash
+curl -X PUT https://api.sindre.com/api/insights/550e8400-e29b-41d4-a716-446655440000/type/2 \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json"
+```
+
+</CodeGroup>
+
+### Path Parameters
+
+<ParamField path="insightId" type="string" required>
+  The insight ID to update (UUID format)
+</ParamField>
+
+<ParamField path="typeId" type="string" required>
+  The type ID to set
+</ParamField>
+
+## Update Insight Status
+
+Update the status of a specific insight using its status ID.
+
+<CodeGroup>
+
+```javascript PUT /api/insights/:insightId/status/:statusId
+const response = await fetch(`https://api.sindre.com/api/insights/${insightId}/status/${statusId}`, {
+  method: 'PUT',
+  headers: {
+    'Authorization': `Bearer ${SINDRE_API_KEY}`,
+    'Content-Type': 'application/json'
+  }
+});
+
+const updatedInsight = await response.json();
+```
+
+```python
+response = requests.put(
+    f'https://api.sindre.com/api/insights/{insight_id}/status/{status_id}',
+    headers={
+        'Authorization': f'Bearer {SINDRE_API_KEY}',
+        'Content-Type': 'application/json'
+    }
+)
+
+insight = response.json()
+```
+
+```bash
+curl -X PUT https://api.sindre.com/api/insights/550e8400-e29b-41d4-a716-446655440000/status/2 \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json"
+```
+
+</CodeGroup>
+
+### Path Parameters
+
+<ParamField path="insightId" type="string" required>
+  The insight ID to update (UUID format)
+</ParamField>
+
+<ParamField path="statusId" type="string" required>
+  The status ID to set (1=new, 2=reviewed, 3=actioned)
+</ParamField>
+
+## Delete Insight
+
+Permanently delete a single insight. This action cannot be undone.
+
+<CodeGroup>
+
+```javascript DELETE /api/insights/:insightId
+const response = await fetch(`https://api.sindre.com/api/insights/${insightId}`, {
+  method: 'DELETE',
+  headers: {
+    'Authorization': `Bearer ${SINDRE_API_KEY}`,
+    'Content-Type': 'application/json'
+  }
+});
+
+const result = await response.json();
+```
+
+```python
+response = requests.delete(
+    f'https://api.sindre.com/api/insights/{insight_id}',
+    headers={
+        'Authorization': f'Bearer {SINDRE_API_KEY}',
+        'Content-Type': 'application/json'
+    }
+)
+
+result = response.json()
+```
+
+```bash
+curl -X DELETE https://api.sindre.com/api/insights/550e8400-e29b-41d4-a716-446655440000 \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json"
+```
+
+</CodeGroup>
+
+### Response
+
+Returns success confirmation with status `200 OK`.
+
+```json
+{
+  "success": true,
+  "data": true
+}
+```
+
+## Delete Multiple Insights
+
+Permanently delete multiple insights at once. This action cannot be undone.
+
+<CodeGroup>
+
+```javascript DELETE /api/insights/delete-multiple
+const response = await fetch('https://api.sindre.com/api/insights/delete-multiple', {
+  method: 'DELETE',
+  headers: {
+    'Authorization': `Bearer ${SINDRE_API_KEY}`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    insightIds: ['insight-1-uuid', 'insight-2-uuid', 'insight-3-uuid']
+  })
+});
+
+const result = await response.json();
+```
+
+```python
+response = requests.delete(
+    'https://api.sindre.com/api/insights/delete-multiple',
+    headers={
+        'Authorization': f'Bearer {SINDRE_API_KEY}',
+        'Content-Type': 'application/json'
+    },
+    json={
+        'insightIds': ['insight-1-uuid', 'insight-2-uuid', 'insight-3-uuid']
+    }
+)
+
+result = response.json()
+```
+
+```bash
+curl -X DELETE https://api.sindre.com/api/insights/delete-multiple \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "insightIds": ["insight-1-uuid", "insight-2-uuid", "insight-3-uuid"]
+  }'
+```
+
+</CodeGroup>
+
+### Request Body
+
+<ParamField body="insightIds" type="array" required>
+  Array of insight UUIDs to delete
+</ParamField>
+
+<Warning>
+  **Permanent deletion**: This action cannot be undone. The insights and all associated data will be permanently removed from the database.
+</Warning>
+
+## Get Task Insights
+
+Retrieve all insights connected to a specific task.
+
+<CodeGroup>
+
+```javascript GET /api/insights/task-insights
+const response = await fetch('https://api.sindre.com/api/insights/task-insights?taskId=task-uuid', {
+  method: 'GET',
+  headers: {
+    'Authorization': `Bearer ${SINDRE_API_KEY}`,
+    'Content-Type': 'application/json'
+  }
+});
+
+const insights = await response.json();
+```
+
+```python
+response = requests.get(
+    'https://api.sindre.com/api/insights/task-insights',
+    headers={
+        'Authorization': f'Bearer {SINDRE_API_KEY}',
+        'Content-Type': 'application/json'
+    },
+    params={'taskId': 'task-uuid'}
+)
+
+insights = response.json()
+```
+
+```bash
+curl -X GET "https://api.sindre.com/api/insights/task-insights?taskId=task-uuid" \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json"
+```
+
+</CodeGroup>
+
+### Query Parameters
+
+<ParamField query="taskId" type="string" required>
+  The UUID of the task to retrieve insights for
+</ParamField>
+
+### Response
+
+```json
+{
+  "data": [
+    {
+      "id": "insight-uuid",
+      "name": "User feedback on login flow",
+      "type": {
+        "name": "User Feedback"
+      },
+      "priority": {
+        "name": "high"
+      }
+    }
+  ]
+}
+```
+
+## Get Meeting Insights
+
+Retrieve all insights associated with a specific meeting.
+
+<CodeGroup>
+
+```javascript GET /api/insights/meeting-insights
+const response = await fetch('https://api.sindre.com/api/insights/meeting-insights?meetingBotId=bot-123', {
+  method: 'GET',
+  headers: {
+    'Authorization': `Bearer ${SINDRE_API_KEY}`,
+    'Content-Type': 'application/json'
+  }
+});
+
+const insights = await response.json();
+```
+
+```python
+response = requests.get(
+    'https://api.sindre.com/api/insights/meeting-insights',
+    headers={
+        'Authorization': f'Bearer {SINDRE_API_KEY}',
+        'Content-Type': 'application/json'
+    },
+    params={'meetingBotId': 'bot-123'}
+)
+
+insights = response.json()
+```
+
+```bash
+curl -X GET "https://api.sindre.com/api/insights/meeting-insights?meetingBotId=bot-123" \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json"
+```
+
+</CodeGroup>
+
+### Query Parameters
+
+<ParamField query="meetingBotId" type="string" required>
+  The bot ID associated with the meeting
+</ParamField>
+
+## Get Unconnected Insights
+
+Retrieve insights that are not connected to a specific task, useful for creating new connections.
+
+<CodeGroup>
+
+```javascript GET /api/insights/unconnected-insights
+const response = await fetch('https://api.sindre.com/api/insights/unconnected-insights?taskId=task-uuid&spaceId=space-uuid', {
+  method: 'GET',
+  headers: {
+    'Authorization': `Bearer ${SINDRE_API_KEY}`,
+    'Content-Type': 'application/json'
+  }
+});
+
+const insights = await response.json();
+```
+
+```python
+response = requests.get(
+    'https://api.sindre.com/api/insights/unconnected-insights',
+    headers={
+        'Authorization': f'Bearer {SINDRE_API_KEY}',
+        'Content-Type': 'application/json'
+    },
+    params={
+        'taskId': 'task-uuid',
+        'spaceId': 'space-uuid'
+    }
+)
+
+insights = response.json()
+```
+
+```bash
+curl -X GET "https://api.sindre.com/api/insights/unconnected-insights?taskId=task-uuid&spaceId=space-uuid" \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json"
+```
+
+</CodeGroup>
+
+### Query Parameters
+
+<ParamField query="taskId" type="string" required>
+  The UUID of the task to filter against
+</ParamField>
+
+<ParamField query="spaceId" type="string">
+  Optional space ID to scope the search (if not provided, searches user's insights)
+</ParamField>
+
+## Create Task-Insight Connection
+
+Connect insights to one or more tasks to make insights actionable.
+
+<CodeGroup>
+
+```javascript POST /api/insights/task-connection
+const response = await fetch('https://api.sindre.com/api/insights/task-connection', {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${SINDRE_API_KEY}`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    insightId: 'insight-uuid',
+    taskIds: ['task-1-uuid', 'task-2-uuid']
+  })
+});
+
+const connection = await response.json();
+```
+
+```python
+response = requests.post(
+    'https://api.sindre.com/api/insights/task-connection',
+    headers={
+        'Authorization': f'Bearer {SINDRE_API_KEY}',
+        'Content-Type': 'application/json'
+    },
+    json={
+        'insightId': 'insight-uuid',
+        'taskIds': ['task-1-uuid', 'task-2-uuid']
+    }
+)
+
+connection = response.json()
+```
+
+```bash
+curl -X POST https://api.sindre.com/api/insights/task-connection \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "insightId": "insight-uuid",
+    "taskIds": ["task-1-uuid", "task-2-uuid"]
+  }'
+```
+
+</CodeGroup>
+
+### Request Body
+
+<ParamField body="insightId" type="string" required>
+  The UUID of the insight to connect
+</ParamField>
+
+<ParamField body="taskIds" type="array" required>
+  Array of task UUIDs to connect the insight to
+</ParamField>
+
+### Response
+
+```json
+{
+  "success": true,
+  "message": "Tasks linked to insight successfully"
+}
+```
+
+## Disconnect Insights from Task
+
+Remove the connection between insights and a task.
+
+<CodeGroup>
+
+```javascript POST /api/insights/unconnect-insights-from-task
+const response = await fetch('https://api.sindre.com/api/insights/unconnect-insights-from-task', {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${SINDRE_API_KEY}`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    insightIds: ['insight-1-uuid', 'insight-2-uuid'],
+    taskId: 'task-uuid'
+  })
+});
+
+const result = await response.json();
+```
+
+```python
+response = requests.post(
+    'https://api.sindre.com/api/insights/unconnect-insights-from-task',
+    headers={
+        'Authorization': f'Bearer {SINDRE_API_KEY}',
+        'Content-Type': 'application/json'
+    },
+    json={
+        'insightIds': ['insight-1-uuid', 'insight-2-uuid'],
+        'taskId': 'task-uuid'
+    }
+)
+
+result = response.json()
+```
+
+```bash
+curl -X POST https://api.sindre.com/api/insights/unconnect-insights-from-task \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "insightIds": ["insight-1-uuid", "insight-2-uuid"],
+    "taskId": "task-uuid"
+  }'
+```
+
+</CodeGroup>
+
+### Request Body
+
+<ParamField body="insightIds" type="array" required>
+  Array of insight UUIDs to disconnect
+</ParamField>
+
+<ParamField body="taskId" type="string" required>
+  The UUID of the task to disconnect from
+</ParamField>
+
+### Response
+
+```json
+{
+  "message": "Insights unconnected from task successfully",
+  "result": true
+}
+```
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion icon="warning" title="400 Bad Request">
+    ```json
+    {
+      "success": false,
+      "message": "Failed to create insight",
+      "error": "Insight data is required"
+    }
+    ```
+    
+    ```json
+    {
+      "success": false,
+      "message": "Failed to update insight priority",
+      "error": "Invalid insightId: must be a non-empty string."
+    }
+    ```
+    
+    ```json
+    {
+      "success": false,
+      "error": "Task ID is required"
+    }
+    ```
+  </Accordion>
+  <Accordion icon="search" title="404 Not Found">
+    ```json
+    {
+      "success": false,
+      "message": "Failed to fetch insight by ID",
+      "error": "Insight not found"
+    }
+    ```
+  </Accordion>
+  <Accordion icon="lock" title="400 Forbidden">
+    ```json
+    {
+      "error": "Invalid Supabase user session"
+    }
+    ```
+  </Accordion>
+  <Accordion icon="server" title="500 Internal Server Error">
+    ```json
+    {
+      "success": false,
+      "message": "Failed to fetch insights",
+      "error": "Database connection error"
+    }
+    ```
+    
+    ```json
+    {
+      "success": false,
+      "message": "Failed to create insight-task connection",
+      "error": "Connection creation failed"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Best Practices
+
+<Tabs>
+  <Tab title="Insight Creation">
+    - Use clear, descriptive names that capture the essence of the insight
+    - Include direct quotes when available to provide context
+    - Categorize insights appropriately with types and priorities
+    - Connect insights to relevant people when known
+    - Set appropriate priorities based on business impact
+  </Tab>
+  <Tab title="Insight Management">
+    - Review insights regularly and update statuses as actions are taken
+    - Connect related insights to tasks to ensure they're actionable
+    - Use the unconnected insights endpoint to identify insights that need action
+    - Update priorities as business priorities change
+    - Clean up duplicate or outdated insights periodically
+  </Tab>
+  <Tab title="Task Connections">
+    - Connect insights to tasks to ensure actionable outcomes
+    - Use the task-insights endpoint to understand task context
+    - Disconnect insights from tasks when they're no longer relevant
+    - Create multiple connections when insights inform multiple tasks
+    - Review connections regularly for relevance
+  </Tab>
+</Tabs>
+
+## Integration Workflows
+
+### Meeting-to-Insight-to-Task Flow
+
+1. **Meeting Recording**: AI extracts insights during meeting processing
+2. **Insight Review**: Stakeholders review and categorize extracted insights
+3. **Task Creation**: Create actionable tasks based on high-priority insights
+4. **Connection**: Link insights to tasks for traceability
+5. **Action**: Execute tasks and update insight status to "actioned"
+
+### Manual Insight Creation Flow
+
+1. **Capture**: Create insights from customer feedback, research, or analysis
+2. **Categorize**: Set appropriate type, priority, and status
+3. **Associate**: Connect to relevant people and meetings if applicable
+4. **Actionize**: Create or connect to tasks for follow-up
+5. **Track**: Monitor progress and update status as actions are completed
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="Task Management"
+    icon="tasks"
+    href="/api-reference/tasks"
+  >
+    Connect insights to actionable tasks and track progress.
+  </Card>
+  <Card
+    title="Meeting Management"
+    icon="video"
+    href="/api-reference/meetings"
+  >
+    Understand how insights are extracted from meetings.
+  </Card>
+</CardGroup>

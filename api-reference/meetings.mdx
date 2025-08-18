@@ -1,0 +1,860 @@
+---
+title: "Meeting Management"
+description: "API endpoints for managing calendar meetings, transcriptions, and processing"
+---
+
+# Meeting Management API
+
+The Meeting Management API allows you to manage calendar-synchronized meetings, update transcriptions, share meetings, and control meeting processing. All meetings are linked to calendar events and can include AI-generated summaries, transcripts, and extracted tasks.
+
+## Meeting Object
+
+The meeting object represents a calendar event with optional recording and AI processing:
+
+```json
+{
+  "id": 12345,
+  "calendar_event_title": "Product Planning Meeting",
+  "recall_bot_ids": ["bot_abc123"],
+  "start_date_time": "2024-01-15T10:00:00",
+  "end_date_time": "2024-01-15T11:00:00",
+  "time_zone": "America/New_York",
+  "meeting_completed": true,
+  "meeting_processed": true,
+  "is_transcript_ready": true,
+  "meeting_summary_and_action_points": {
+    "summary": "Discussed Q1 product roadmap and priorities",
+    "action_items": ["Review feature specifications", "Schedule design review"]
+  },
+  "transcript": {
+    "speakers": [
+      {
+        "name": "John Doe",
+        "segments": [
+          {
+            "start": 0.0,
+            "end": 5.2,
+            "text": "Let's start with the roadmap review"
+          }
+        ]
+      }
+    ]
+  },
+  "meeting_language": "en",
+  "space_id": "550e8400-e29b-41d4-a716-446655440000",
+  "user_calendar_sync_id": "user-sync-uuid",
+  "created_at": "2024-01-15T09:00:00Z",
+  "updated_at": "2024-01-15T11:30:00Z"
+}
+```
+
+### Key Fields
+
+<AccordionGroup>
+  <Accordion icon="id" title="id">
+    Unique meeting identifier (bigint)
+  </Accordion>
+  <Accordion icon="calendar" title="calendar_event_title">
+    Meeting title from calendar event
+  </Accordion>
+  <Accordion icon="robot" title="recall_bot_ids">
+    Array of bot IDs used for recording (from Recall API)
+  </Accordion>
+  <Accordion icon="check-circle" title="meeting_completed">
+    Whether the meeting has ended
+  </Accordion>
+  <Accordion icon="gear" title="meeting_processed">
+    Whether AI processing (summary, tasks) is complete
+  </Accordion>
+  <Accordion icon="users" title="space_id">
+    Workspace/team that owns this meeting
+  </Accordion>
+</AccordionGroup>
+
+## Get Meeting
+
+Retrieve a specific meeting by its event ID.
+
+<CodeGroup>
+
+```javascript GET /api/meetings
+const response = await fetch(`https://api.sindre.com/api/meetings?eventId=${eventId}`, {
+  method: 'GET',
+  headers: {
+    'Authorization': `Bearer ${SINDRE_API_KEY}`,
+    'Content-Type': 'application/json'
+  }
+});
+
+const meeting = await response.json();
+```
+
+```python
+response = requests.get(
+    'https://api.sindre.com/api/meetings',
+    headers={
+        'Authorization': f'Bearer {SINDRE_API_KEY}',
+        'Content-Type': 'application/json'
+    },
+    params={'eventId': event_id}
+)
+
+meeting = response.json()
+```
+
+```bash
+curl -X GET "https://api.sindre.com/api/meetings?eventId=12345" \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json"
+```
+
+</CodeGroup>
+
+### Query Parameters
+
+<ParamField query="eventId" type="integer" required>
+  The meeting/event ID to retrieve
+</ParamField>
+
+### Response
+
+Returns the meeting object if found, otherwise 404 error.
+
+## Get Meeting with Attendees
+
+Retrieve a meeting including all attendee information.
+
+<CodeGroup>
+
+```javascript GET /api/meetings/get-meeting-with-attendees
+const response = await fetch(`https://api.sindre.com/api/meetings/get-meeting-with-attendees?eventId=${eventId}`, {
+  method: 'GET',
+  headers: {
+    'Authorization': `Bearer ${SINDRE_API_KEY}`,
+    'Content-Type': 'application/json'
+  }
+});
+
+const meetingWithAttendees = await response.json();
+```
+
+```python
+response = requests.get(
+    'https://api.sindre.com/api/meetings/get-meeting-with-attendees',
+    headers={
+        'Authorization': f'Bearer {SINDRE_API_KEY}',
+        'Content-Type': 'application/json'
+    },
+    params={'eventId': event_id}
+)
+
+meeting = response.json()
+```
+
+</CodeGroup>
+
+### Response
+
+```json
+{
+  "id": 12345,
+  "calendar_event_title": "Product Planning Meeting",
+  "start_date_time": "2024-01-15T10:00:00",
+  "attendees": [
+    {
+      "email": "john@company.com",
+      "name": "John Doe"
+    },
+    {
+      "email": "jane@company.com", 
+      "name": "Jane Smith"
+    }
+  ]
+}
+```
+
+## List Completed Meetings
+
+Get paginated list of completed meetings with summaries.
+
+<CodeGroup>
+
+```javascript GET /api/meetings/get-completed-meetings
+const response = await fetch('https://api.sindre.com/api/meetings/get-completed-meetings?limit=20&offset=0', {
+  method: 'GET',
+  headers: {
+    'Authorization': `Bearer ${SINDRE_API_KEY}`,
+    'Content-Type': 'application/json'
+  }
+});
+
+const meetings = await response.json();
+```
+
+```python
+response = requests.get(
+    'https://api.sindre.com/api/meetings/get-completed-meetings',
+    headers={
+        'Authorization': f'Bearer {SINDRE_API_KEY}',
+        'Content-Type': 'application/json'
+    },
+    params={
+        'limit': 20,
+        'offset': 0
+    }
+)
+
+meetings = response.json()
+```
+
+</CodeGroup>
+
+### Query Parameters
+
+<ParamField query="limit" type="integer" default="50">
+  Number of meetings to return (max 100)
+</ParamField>
+
+<ParamField query="offset" type="integer" default="0">
+  Number of meetings to skip for pagination
+</ParamField>
+
+### Response
+
+```json
+{
+  "events": [
+    {
+      "id": 12345,
+      "calendar_event_title": "Product Planning Meeting",
+      "start_date_time": "2024-01-15T10:00:00",
+      "meeting_completed": true,
+      "attendees": [
+        {
+          "email": "john@company.com",
+          "name": "John Doe"
+        }
+      ]
+    }
+  ],
+  "pagination": {
+    "offset": 0,
+    "limit": 20,
+    "total": 45,
+    "hasMore": true
+  }
+}
+```
+
+## List Future Meetings
+
+Get upcoming meetings from calendar sync.
+
+<CodeGroup>
+
+```javascript GET /api/meetings/get-future-meetings
+const response = await fetch('https://api.sindre.com/api/meetings/get-future-meetings?nbDays=7', {
+  method: 'GET',
+  headers: {
+    'Authorization': `Bearer ${SINDRE_API_KEY}`,
+    'Content-Type': 'application/json'
+  }
+});
+
+const futureMeetings = await response.json();
+```
+
+```python
+response = requests.get(
+    'https://api.sindre.com/api/meetings/get-future-meetings',
+    headers={
+        'Authorization': f'Bearer {SINDRE_API_KEY}',
+        'Content-Type': 'application/json'
+    },
+    params={'nbDays': 7}
+)
+
+meetings = response.json()
+```
+
+</CodeGroup>
+
+### Query Parameters
+
+<ParamField query="nbDays" type="integer" default="7">
+  Number of days ahead to look for meetings
+</ParamField>
+
+## Update Meeting Language
+
+Change the language setting for a meeting's processing.
+
+<CodeGroup>
+
+```javascript PATCH /api/meetings/update-language
+const response = await fetch('https://api.sindre.com/api/meetings/update-language', {
+  method: 'PATCH',
+  headers: {
+    'Authorization': `Bearer ${SINDRE_API_KEY}`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    eventId: 12345,
+    language: 'es'
+  })
+});
+
+const result = await response.json();
+```
+
+```python
+response = requests.patch(
+    'https://api.sindre.com/api/meetings/update-language',
+    headers={
+        'Authorization': f'Bearer {SINDRE_API_KEY}',
+        'Content-Type': 'application/json'
+    },
+    json={
+        'eventId': 12345,
+        'language': 'es'
+    }
+)
+
+result = response.json()
+```
+
+</CodeGroup>
+
+### Request Body
+
+<ParamField body="eventId" type="integer" required>
+  The meeting ID to update
+</ParamField>
+
+<ParamField body="language" type="string" required>
+  Language code (e.g., 'en', 'es', 'fr', 'de')
+</ParamField>
+
+## Update Meeting Summary
+
+Update the AI-generated summary and action points.
+
+<CodeGroup>
+
+```javascript PATCH /api/meetings/update-summary
+const response = await fetch('https://api.sindre.com/api/meetings/update-summary', {
+  method: 'PATCH',
+  headers: {
+    'Authorization': `Bearer ${SINDRE_API_KEY}`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    eventId: 12345,
+    newSummary: {
+      "summary": "Updated meeting summary",
+      "action_items": ["New action item"]
+    }
+  })
+});
+
+const result = await response.json();
+```
+
+```python
+response = requests.patch(
+    'https://api.sindre.com/api/meetings/update-summary',
+    headers={
+        'Authorization': f'Bearer {SINDRE_API_KEY}',
+        'Content-Type': 'application/json'
+    },
+    json={
+        'eventId': 12345,
+        'newSummary': {
+            'summary': 'Updated meeting summary',
+            'action_items': ['New action item']
+        }
+    }
+)
+
+result = response.json()
+```
+
+</CodeGroup>
+
+### Request Body
+
+<ParamField body="eventId" type="integer" required>
+  The meeting ID to update
+</ParamField>
+
+<ParamField body="newSummary" type="object" required>
+  New summary object with summary text and action items
+</ParamField>
+
+## Reprocess Meeting
+
+Trigger reprocessing of a meeting with updated AI models.
+
+<CodeGroup>
+
+```javascript POST /api/meetings/reprocess-meeting
+const response = await fetch('https://api.sindre.com/api/meetings/reprocess-meeting', {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${SINDRE_API_KEY}`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    botId: 'bot_abc123',
+    languageCode: 'en'
+  })
+});
+
+const result = await response.json();
+```
+
+```python
+response = requests.post(
+    'https://api.sindre.com/api/meetings/reprocess-meeting',
+    headers={
+        'Authorization': f'Bearer {SINDRE_API_KEY}',
+        'Content-Type': 'application/json'
+    },
+    json={
+        'botId': 'bot_abc123',
+        'languageCode': 'en'
+    }
+)
+
+result = response.json()
+```
+
+</CodeGroup>
+
+### Request Body
+
+<ParamField body="botId" type="string" required>
+  The Recall bot ID for the meeting recording
+</ParamField>
+
+<ParamField body="languageCode" type="string">
+  Language code for processing (defaults to meeting's current language)
+</ParamField>
+
+## Update Meeting Transcript
+
+Update the transcript for a meeting.
+
+<CodeGroup>
+
+```javascript POST /api/meetings/update-transcript
+const response = await fetch('https://api.sindre.com/api/meetings/update-transcript', {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${SINDRE_API_KEY}`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    botId: 'bot_abc123',
+    transcript: {
+      "speakers": [
+        {
+          "name": "John Doe",
+          "segments": [
+            {
+              "start": 0.0,
+              "end": 5.2,
+              "text": "Updated transcript text"
+            }
+          ]
+        }
+      ]
+    },
+    languageCode: 'en'
+  })
+});
+
+const result = await response.json();
+```
+
+```python
+response = requests.post(
+    'https://api.sindre.com/api/meetings/update-transcript',
+    headers={
+        'Authorization': f'Bearer {SINDRE_API_KEY}',
+        'Content-Type': 'application/json'
+    },
+    json={
+        'botId': 'bot_abc123',
+        'transcript': {
+            'speakers': [
+                {
+                    'name': 'John Doe',
+                    'segments': [
+                        {
+                            'start': 0.0,
+                            'end': 5.2,
+                            'text': 'Updated transcript text'
+                        }
+                    ]
+                }
+            ]
+        },
+        'languageCode': 'en'
+    }
+)
+
+result = response.json()
+```
+
+</CodeGroup>
+
+### Request Body
+
+<ParamField body="botId" type="string" required>
+  The Recall bot ID for the meeting
+</ParamField>
+
+<ParamField body="transcript" type="object" required>
+  New transcript object with speakers and segments
+</ParamField>
+
+<ParamField body="languageCode" type="string" required>
+  Language code for the transcript
+</ParamField>
+
+## Share Meeting
+
+Share a meeting with team members or spaces.
+
+<CodeGroup>
+
+```javascript POST /api/meetings/share-meeting
+const response = await fetch('https://api.sindre.com/api/meetings/share-meeting', {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${SINDRE_API_KEY}`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    eventId: 12345,
+    userIds: ['user-uuid-1', 'user-uuid-2'],
+    spaceId: 'space-uuid'
+  })
+});
+
+const result = await response.json();
+```
+
+```python
+response = requests.post(
+    'https://api.sindre.com/api/meetings/share-meeting',
+    headers={
+        'Authorization': f'Bearer {SINDRE_API_KEY}',
+        'Content-Type': 'application/json'
+    },
+    json={
+        'eventId': 12345,
+        'userIds': ['user-uuid-1', 'user-uuid-2'],
+        'spaceId': 'space-uuid'
+    }
+)
+
+result = response.json()
+```
+
+</CodeGroup>
+
+### Request Body
+
+<ParamField body="eventId" type="integer" required>
+  The meeting ID to share
+</ParamField>
+
+<ParamField body="userIds" type="array" required>
+  Array of user IDs to share with
+</ParamField>
+
+<ParamField body="spaceId" type="string">
+  Optional space ID for organization
+</ParamField>
+
+## Delete Meeting
+
+Permanently delete a meeting and all associated data.
+
+<CodeGroup>
+
+```javascript DELETE /api/meetings/delete-meeting
+const response = await fetch('https://api.sindre.com/api/meetings/delete-meeting', {
+  method: 'DELETE',
+  headers: {
+    'Authorization': `Bearer ${SINDRE_API_KEY}`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    eventId: 12345
+  })
+});
+
+const result = await response.json();
+```
+
+```python
+response = requests.delete(
+    'https://api.sindre.com/api/meetings/delete-meeting',
+    headers={
+        'Authorization': f'Bearer {SINDRE_API_KEY}',
+        'Content-Type': 'application/json'
+    },
+    json={'eventId': 12345}
+)
+
+result = response.json()
+```
+
+</CodeGroup>
+
+<Warning>
+  **Permanent deletion**: This action cannot be undone. All meeting data including transcripts, summaries, and extracted tasks will be permanently removed.
+</Warning>
+
+## Get Team Members
+
+Get list of team members for sharing meetings.
+
+<CodeGroup>
+
+```javascript GET /api/meetings/get-team-members
+const response = await fetch('https://api.sindre.com/api/meetings/get-team-members', {
+  method: 'GET',
+  headers: {
+    'Authorization': `Bearer ${SINDRE_API_KEY}`,
+    'Content-Type': 'application/json'
+  }
+});
+
+const teamMembers = await response.json();
+```
+
+```python
+response = requests.get(
+    'https://api.sindre.com/api/meetings/get-team-members',
+    headers={
+        'Authorization': f'Bearer {SINDRE_API_KEY}',
+        'Content-Type': 'application/json'
+    }
+)
+
+team_members = response.json()
+```
+
+</CodeGroup>
+
+### Response
+
+```json
+{
+  "success": true,
+  "teamMembers": [
+    {
+      "id": "user-uuid-1",
+      "email": "john@company.com"
+    },
+    {
+      "id": "user-uuid-2", 
+      "email": "jane@company.com"
+    }
+  ]
+}
+```
+
+## Get Meeting Attendees
+
+Get attendee list for a specific meeting.
+
+<CodeGroup>
+
+```javascript GET /api/meetings/get-attendees
+const response = await fetch(`https://api.sindre.com/api/meetings/get-attendees?eventId=${eventId}`, {
+  method: 'GET',
+  headers: {
+    'Authorization': `Bearer ${SINDRE_API_KEY}`,
+    'Content-Type': 'application/json'
+  }
+});
+
+const attendees = await response.json();
+```
+
+```python
+response = requests.get(
+    'https://api.sindre.com/api/meetings/get-attendees',
+    headers={
+        'Authorization': f'Bearer {SINDRE_API_KEY}',
+        'Content-Type': 'application/json'
+    },
+    params={'eventId': event_id}
+)
+
+attendees = response.json()
+```
+
+</CodeGroup>
+
+### Response
+
+```json
+{
+  "attendees": [
+    {
+      "email": "john@company.com",
+      "name": "John Doe"
+    },
+    {
+      "email": "jane@company.com",
+      "name": "Jane Smith"
+    }
+  ]
+}
+```
+
+## Advanced Endpoints
+
+### Get Events Data by Bot IDs
+
+Retrieve meeting information for multiple bot IDs.
+
+<CodeGroup>
+
+```javascript GET /api/meetings/get-events-data
+const response = await fetch('https://api.sindre.com/api/meetings/get-events-data?botIds=bot1,bot2,bot3', {
+  method: 'GET',
+  headers: {
+    'Authorization': `Bearer ${SINDRE_API_KEY}`,
+    'Content-Type': 'application/json'
+  }
+});
+
+const eventsData = await response.json();
+```
+
+</CodeGroup>
+
+### Get Person Meetings
+
+Get all meetings for a specific person by bot IDs.
+
+<CodeGroup>
+
+```javascript GET /api/meetings/get-person-meetings
+const response = await fetch('https://api.sindre.com/api/meetings/get-person-meetings?botIds=bot1,bot2', {
+  method: 'GET',
+  headers: {
+    'Authorization': `Bearer ${SINDRE_API_KEY}`,
+    'Content-Type': 'application/json'
+  }
+});
+
+const personMeetings = await response.json();
+```
+
+</CodeGroup>
+
+### Get Meeting for Insights
+
+Get meeting data specifically for insights generation.
+
+<CodeGroup>
+
+```javascript GET /api/meetings/get-insight-meeting
+const response = await fetch(`https://api.sindre.com/api/meetings/get-insight-meeting?sourceBotId=${botId}`, {
+  method: 'GET',
+  headers: {
+    'Authorization': `Bearer ${SINDRE_API_KEY}`,
+    'Content-Type': 'application/json'
+  }
+});
+
+const insightMeeting = await response.json();
+```
+
+</CodeGroup>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion icon="warning" title="400 Bad Request">
+    ```json
+    {
+      "error": "Event ID is required"
+    }
+    ```
+  </Accordion>
+  <Accordion icon="key" title="401 Unauthorized">
+    ```json
+    {
+      "error": "Invalid Supabase user session"
+    }
+    ```
+  </Accordion>
+  <Accordion icon="search" title="404 Not Found">
+    ```json
+    {
+      "error": "Meeting not found"
+    }
+    ```
+  </Accordion>
+  <Accordion icon="server" title="500 Internal Server Error">
+    ```json
+    {
+      "error": "Failed to fetch meeting"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Integration Notes
+
+### Calendar Sync System
+
+Meetings are automatically synchronized from connected calendar providers (Google, Microsoft). Each user has a `user_calendar_sync_id` that links their calendar events to meeting records.
+
+### Bot Integration
+
+Meeting recordings are handled through the Recall API. Each meeting can have one or more `recall_bot_ids` that identify the recording bots. These IDs are crucial for:
+
+- Reprocessing meetings
+- Updating transcripts
+- Accessing recording data
+
+### Space-Based Organization
+
+Meetings can be organized by spaces (teams/workspaces). When sharing meetings, you can specify a `space_id` to organize meetings within team contexts.
+
+### Processing Workflow
+
+1. **Meeting Creation**: Calendar event synced to `user_calendar_events_sync`
+2. **Recording**: Recall bot joins and records (if configured)
+3. **Transcription**: Audio transcribed to text with speaker diarization
+4. **AI Processing**: Summary, action items, and tasks extracted
+5. **Completion**: `meeting_processed` set to true
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="Task Management"
+    icon="list-check"
+    href="/api-reference/tasks"
+  >
+    Manage tasks extracted from meeting transcriptions.
+  </Card>
+  <Card
+    title="Insights"
+    icon="lightbulb"
+    href="/api-reference/insights"
+  >
+    Access AI-generated insights from meeting analysis.
+  </Card>
+</CardGroup>

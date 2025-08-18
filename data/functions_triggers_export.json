@@ -1,0 +1,552 @@
+{
+    "triggers": [
+        {
+            "event_object_schema": "public",
+            "event_object_table": "insight_task",
+            "trigger_name": "trigger_log_insight_task_changes",
+            "trigger_def": "CREATE TRIGGER trigger_log_insight_task_changes AFTER INSERT OR DELETE ON insight_task FOR EACH ROW EXECUTE FUNCTION log_insight_task_changes()"
+        },
+        {
+            "event_object_schema": "public",
+            "event_object_table": "space_members",
+            "trigger_name": "trigger_add_tasks_on_member_insert",
+            "trigger_def": "CREATE TRIGGER trigger_add_tasks_on_member_insert AFTER INSERT ON space_members FOR EACH ROW EXECUTE FUNCTION add_user_tasks_to_space()"
+        },
+        {
+            "event_object_schema": "public",
+            "event_object_table": "space_members",
+            "trigger_name": "trigger_remove_tasks_on_member_delete",
+            "trigger_def": "CREATE TRIGGER trigger_remove_tasks_on_member_delete AFTER DELETE ON space_members FOR EACH ROW EXECUTE FUNCTION remove_user_tasks_from_space()"
+        },
+        {
+            "event_object_schema": "public",
+            "event_object_table": "space_tasks",
+            "trigger_name": "set_slug_before_insert",
+            "trigger_def": "CREATE TRIGGER set_slug_before_insert BEFORE INSERT ON space_tasks FOR EACH ROW EXECUTE FUNCTION generate_slug()"
+        },
+        {
+            "event_object_schema": "public",
+            "event_object_table": "task_comments",
+            "trigger_name": "task_comments_update_edited_at",
+            "trigger_def": "CREATE TRIGGER task_comments_update_edited_at BEFORE UPDATE ON task_comments FOR EACH ROW EXECUTE FUNCTION update_comment_edited_at()"
+        },
+        {
+            "event_object_schema": "public",
+            "event_object_table": "tasks",
+            "trigger_name": "tasks_changelog_trigger",
+            "trigger_def": "CREATE TRIGGER tasks_changelog_trigger AFTER INSERT OR UPDATE ON tasks FOR EACH ROW EXECUTE FUNCTION log_tasks_changes()"
+        },
+        {
+            "event_object_schema": "public",
+            "event_object_table": "tasks",
+            "trigger_name": "trigger_add_task_to_space_tasks_if_space_id_set",
+            "trigger_def": "CREATE TRIGGER trigger_add_task_to_space_tasks_if_space_id_set AFTER INSERT ON tasks FOR EACH ROW EXECUTE FUNCTION add_task_to_space_tasks_if_space_id_set()"
+        },
+        {
+            "event_object_schema": "public",
+            "event_object_table": "user_calendar_events_sync",
+            "trigger_name": "trigger_set_calendar_event_sync_main_id_on_insert",
+            "trigger_def": "CREATE TRIGGER trigger_set_calendar_event_sync_main_id_on_insert BEFORE INSERT ON user_calendar_events_sync FOR EACH ROW EXECUTE FUNCTION set_calendar_event_sync_main_id_on_insert()"
+        },
+        {
+            "event_object_schema": "public",
+            "event_object_table": "users",
+            "trigger_name": "trigger_create_user_calendar_sync_on_user_insert",
+            "trigger_def": "CREATE TRIGGER trigger_create_user_calendar_sync_on_user_insert AFTER INSERT ON users FOR EACH ROW EXECUTE FUNCTION create_user_calendar_sync_on_user_insert()"
+        },
+        {
+            "event_object_schema": "public",
+            "event_object_table": "users",
+            "trigger_name": "trigger_update_pending_invites_on_user_creation",
+            "trigger_def": "CREATE TRIGGER trigger_update_pending_invites_on_user_creation AFTER INSERT ON users FOR EACH ROW EXECUTE FUNCTION update_pending_invites_on_user_creation()"
+        }
+    ],
+    "functions": [
+        {
+            "routine_name": "add_task_to_space_tasks_if_space_id_set",
+            "routine_type": "FUNCTION",
+            "data_type": "trigger",
+            "routine_definition": "\r\nBEGIN\r\n  -- Insert based on direct space_id (if set)\r\n  IF NEW.space_id IS NOT NULL THEN\r\n    INSERT INTO public.space_tasks (task_id, space_id)\r\n    SELECT NEW.id, NEW.space_id\r\n    WHERE NOT EXISTS (\r\n      SELECT 1\r\n      FROM public.space_tasks st\r\n      WHERE st.task_id = NEW.id AND st.space_id = NEW.space_id\r\n    );\r\n  -- If space_id is not set but user_id is set, look up space_ids from space_members\r\n  ELSIF NEW.user_id IS NOT NULL THEN\r\n    INSERT INTO public.space_tasks (task_id, space_id)\r\n    SELECT NEW.id, sm.space_id\r\n    FROM public.space_members sm\r\n    WHERE sm.user_id = NEW.user_id\r\n    AND NOT EXISTS (\r\n      SELECT 1\r\n      FROM public.space_tasks st\r\n      WHERE st.task_id = NEW.id AND st.space_id = sm.space_id\r\n    );\r\n  END IF;\r\n\r\n  RETURN NEW;\r\nEND;\r\n"
+        },
+        {
+            "routine_name": "add_user_tasks_to_space",
+            "routine_type": "FUNCTION",
+            "data_type": "trigger",
+            "routine_definition": "\r\nBEGIN\r\n  -- Update tasks to set space_id where user_id matches and space_id is currently null or different\r\n  UPDATE public.tasks\r\n  SET space_id = NEW.space_id\r\n  WHERE user_id = NEW.user_id\r\n    AND (space_id IS NULL OR space_id <> NEW.space_id);\r\n\r\n  -- Insert user's tasks into space_tasks, avoiding duplicates\r\n  INSERT INTO public.space_tasks (task_id, space_id)\r\n  SELECT t.id, NEW.space_id\r\n  FROM public.tasks t\r\n  WHERE t.user_id = NEW.user_id\r\n    AND NOT EXISTS (\r\n      SELECT 1\r\n      FROM public.space_tasks st\r\n      WHERE st.task_id = t.id AND st.space_id = NEW.space_id\r\n    );\r\n\r\n  RETURN NEW;\r\nEND;\r\n"
+        },
+        {
+            "routine_name": "create_task_with_user_context",
+            "routine_type": "FUNCTION",
+            "data_type": "jsonb",
+            "routine_definition": "\r\nDECLARE\r\n      result_task jsonb;\r\n  BEGIN\r\n      PERFORM set_config('app.current_user_id', p_creator_user_id::text, true);\r\n\r\n      INSERT INTO tasks (\r\n          name,\r\n          description,\r\n          status_id,\r\n          priority_id,\r\n          space_id,\r\n          user_id,\r\n          is_sindre_assigned,\r\n          bot_ids,\r\n          name_vector,\r\n          description_vector,\r\n          created_at,\r\n          updated_at\r\n      )\r\n      VALUES (\r\n          (p_task_data->>'name'),\r\n          (p_task_data->>'description'),\r\n          (p_task_data->>'status_id')::integer,\r\n          (p_task_data->>'priority_id')::integer,\r\n          (p_task_data->>'space_id')::uuid,\r\n          (p_task_data->>'user_id')::uuid,\r\n          (p_task_data->>'is_sindre_assigned')::boolean,\r\n          CASE\r\n              WHEN p_task_data->'bot_ids' IS NULL THEN NULL\r\n              WHEN jsonb_typeof(p_task_data->'bot_ids') = 'array' THEN\r\n                  ARRAY(SELECT jsonb_array_elements_text(p_task_data->'bot_ids'))\r\n              ELSE\r\n                  ARRAY[p_task_data->>'bot_ids']\r\n          END,\r\n          (p_task_data->>'name_vector')::vector,\r\n          (p_task_data->>'description_vector')::vector,\r\n          now(),\r\n          now()\r\n      )\r\n      RETURNING to_jsonb(tasks.*) INTO result_task;\r\n\r\n      RETURN result_task;\r\n  END;\r\n"
+        },
+        {
+            "routine_name": "create_user_calendar_sync_on_user_insert",
+            "routine_type": "FUNCTION",
+            "data_type": "trigger",
+            "routine_definition": "\r\nBEGIN\r\n  INSERT INTO public.user_calendar_sync (\r\n    user_id,\r\n    user_calendar_provider_id\r\n  ) VALUES (\r\n    NEW.id,\r\n    NEW.email\r\n  );\r\n  RETURN NEW;\r\nEND;\r\n"
+        },
+        {
+            "routine_name": "find_similar_space_tasks",
+            "routine_type": "FUNCTION",
+            "data_type": "record",
+            "routine_definition": "\r\n  SELECT\r\n    t.id,\r\n    t.name,\r\n    t.description,\r\n    t.created_at,\r\n    1 - (t.name_vector <=> query_embedding) AS similarity,\r\n    t.priority_id,\r\n    t.status_id\r\n  FROM public.tasks AS t\r\n  WHERE t.space_id = p_space_id\r\n    AND (p_task_id IS NULL OR t.id <> p_task_id)\r\n    AND 1 - (t.name_vector <=> query_embedding) > threshold\r\n  ORDER BY similarity DESC;\r\n"
+        },
+        {
+            "routine_name": "find_similar_space_tasks_description",
+            "routine_type": "FUNCTION",
+            "data_type": "record",
+            "routine_definition": "\r\n  SELECT\r\n    t.id,\r\n    t.name,\r\n    t.description,\r\n    t.created_at,\r\n    1 - (t.description_vector <=> query_embedding) AS similarity,\r\n    t.priority_id,\r\n    t.status_id\r\n  FROM public.tasks AS t\r\n  WHERE t.space_id = p_space_id\r\n    AND (\r\n      p_task_ids IS NULL\r\n      OR t.id = ANY(p_task_ids)\r\n    )\r\n    AND (p_task_id IS NULL OR t.id <> p_task_id)\r\n    AND 1 - (t.description_vector <=> query_embedding) > threshold\r\n  ORDER BY similarity DESC;\r\n"
+        },
+        {
+            "routine_name": "find_similar_user_tasks",
+            "routine_type": "FUNCTION",
+            "data_type": "record",
+            "routine_definition": "\r\n  SELECT\r\n    t.id,\r\n    t.name,\r\n    t.description,\r\n    t.created_at,\r\n    1 - (t.name_vector <=> query_embedding) AS similarity,\r\n    t.priority_id,\r\n    t.status_id\r\n  FROM public.tasks AS t\r\n  WHERE t.user_id = p_user_id\r\n    -- n\u2019inclure que si ce n\u2019est pas la t\u00e2che \u00e0 exclure\r\n    AND (p_task_id IS NULL OR t.id <> p_task_id)\r\n    AND 1 - (t.name_vector <=> query_embedding) > threshold\r\n  ORDER BY similarity DESC;\r\n"
+        },
+        {
+            "routine_name": "find_similar_user_tasks_description",
+            "routine_type": "FUNCTION",
+            "data_type": "record",
+            "routine_definition": "\r\n  SELECT\r\n    t.id,\r\n    t.name,\r\n    t.description,\r\n    t.created_at,\r\n    1 - (t.description_vector <=> query_embedding) AS similarity,\r\n    t.priority_id,\r\n    t.status_id\r\n  FROM public.tasks AS t\r\n  WHERE t.user_id = p_user_id\r\n    AND (\r\n      p_task_ids IS NULL\r\n      OR t.id = ANY(p_task_ids)\r\n    )\r\n    AND (p_task_id IS NULL OR t.id <> p_task_id)\r\n    AND 1 - (t.description_vector <=> query_embedding) > threshold\r\n  ORDER BY similarity DESC;\r\n"
+        },
+        {
+            "routine_name": "generate_slug",
+            "routine_type": "FUNCTION",
+            "data_type": "trigger",
+            "routine_definition": "\r\nDECLARE\r\n  space_prefix TEXT;\r\n  next_number INTEGER;\r\nBEGIN\r\n  -- Get first 4 uppercase letters of the space name\r\n  SELECT UPPER(LEFT(name, 4)) INTO space_prefix\r\n  FROM public.spaces\r\n  WHERE id = NEW.space_id;\r\n\r\n  -- Get next number for this prefix by slicing slug *after* prefix + hyphen\r\n  SELECT COALESCE(\r\n    MAX(CAST(SUBSTRING(slug FROM LENGTH(space_prefix) + 2) AS INTEGER)),\r\n    0\r\n  ) + 1\r\n  INTO next_number\r\n  FROM public.space_tasks\r\n  WHERE space_id = NEW.space_id;\r\n\r\n  -- Build slug like \"OBS-1\", \"PROD-2\", etc.\r\n  NEW.slug := space_prefix || '-' || next_number;\r\n\r\n  RETURN NEW;\r\nEND;\r\n"
+        },
+        {
+            "routine_name": "get_function_list",
+            "routine_type": "FUNCTION",
+            "data_type": "record",
+            "routine_definition": "\r\nBEGIN\r\n    RETURN QUERY\r\n    SELECT\r\n        r.routine_name::text,\r\n        r.routine_type::text,\r\n        r.data_type::text,\r\n        r.routine_definition::text\r\n    FROM information_schema.routines r\r\n    WHERE r.specific_schema = schema_name\r\n    ORDER BY r.routine_name;\r\nEND;\r\n"
+        },
+        {
+            "routine_name": "get_org_people_with_insights_and_meetings",
+            "routine_type": "FUNCTION",
+            "data_type": "jsonb",
+            "routine_definition": "\r\nDECLARE\r\n  caller_sync_id UUID;\r\n  result         JSONB;\r\nBEGIN\r\n  -- 0) Build the list of spaces the user belongs to\r\n  WITH user_spaces AS (\r\n    SELECT space_id\r\n    FROM space_members\r\n    WHERE user_id = p_user_id\r\n  ),\r\n\r\n  -- 1) Ensure the user may see this org (by ownership or space-membership)\r\n  org_row AS (\r\n    SELECT o.id, o.name, o.domain, ot.name AS type, o.created_at\r\n    FROM organizations o\r\n    LEFT JOIN organization_types ot ON o.type_id = ot.id\r\n    WHERE o.id = p_org_id\r\n      AND (\r\n        o.user_id = p_user_id\r\n        OR o.space_id IN (SELECT space_id FROM user_spaces)\r\n      )\r\n  ),\r\n\r\n  -- 2) Get the user's calendar sync ID\r\n  caller_sync AS (\r\n    SELECT id AS sync_id\r\n    FROM user_calendar_sync\r\n    WHERE user_id = p_user_id\r\n    LIMIT 1\r\n  ),\r\n\r\n  -- 3) People in the org that the user has access to\r\n  org_people AS (\r\n    SELECT p.id,\r\n           p.full_name,\r\n           p.email,\r\n           p.title,\r\n           p.phone_number,\r\n           p.content,\r\n           p.meetings_title AS person_bot_ids\r\n    FROM people p\r\n    WHERE p.outside_organisation_id = p_org_id\r\n      AND (\r\n        p.user_id = p_user_id\r\n        OR p.space_id IN (SELECT space_id FROM user_spaces)\r\n      )\r\n  ),\r\n\r\n  -- 4) Insights per person\r\n  person_insights AS (\r\n    SELECT\r\n      i.person_id,\r\n      jsonb_agg(\r\n        jsonb_build_object(\r\n          'id',         i.id,\r\n          'name',       i.name,\r\n          'quote',      i.direct_quote,\r\n          'details',    i.details,\r\n          'created_at', i.created_at,\r\n          'updated_at', i.updated_at,\r\n          'status',     st.name,\r\n          'priority',   pt.name,\r\n          'type',       tt.name\r\n        )\r\n      ) AS insights\r\n    FROM insights i\r\n    JOIN insight_statuses st ON st.id = i.status_id\r\n    JOIN insight_priorities pt ON pt.id = i.priority_id\r\n    JOIN insight_types tt ON tt.id = i.type_id\r\n    WHERE i.person_id IN (SELECT id FROM org_people)\r\n    GROUP BY i.person_id\r\n  ),\r\n\r\n  -- 5) Deduplicate all meetings based on title + time + bots\r\n  all_meetings AS (\r\n    SELECT *\r\n    FROM (\r\n      SELECT\r\n        e.calendar_event_title,\r\n        e.start_date_time,\r\n        e.end_date_time,\r\n        e.recall_bot_ids,\r\n        MIN(e.id) AS id,\r\n        MAX(CASE\r\n            WHEN e.user_calendar_sync_id = (SELECT sync_id FROM caller_sync)\r\n            THEN e.meeting_summary::TEXT\r\n            ELSE NULL\r\n          END)::JSONB AS safe_summary,\r\n        ROW_NUMBER() OVER (\r\n          PARTITION BY e.calendar_event_title, e.start_date_time\r\n          ORDER BY e.start_date_time DESC\r\n        ) AS dedup_rank\r\n      FROM user_calendar_events_sync e\r\n      JOIN org_people p ON p.person_bot_ids && e.recall_bot_ids\r\n      GROUP BY\r\n        e.calendar_event_title,\r\n        e.start_date_time,\r\n        e.end_date_time,\r\n        e.recall_bot_ids\r\n    ) t\r\n    WHERE dedup_rank = 1\r\n  ),\r\n\r\n  -- 6) Global meeting limit\r\n  limited_meetings AS (\r\n    SELECT *,\r\n           ROW_NUMBER() OVER (ORDER BY start_date_time DESC) AS rn\r\n    FROM all_meetings\r\n  ),\r\n  final_meetings AS (\r\n    SELECT *\r\n    FROM limited_meetings\r\n    WHERE rn <= p_meeting_limit\r\n  ),\r\n\r\n  -- 7) Re-aggregate meetings per person\r\n  person_meetings AS (\r\n    SELECT\r\n      p.id AS person_id,\r\n      COALESCE(\r\n        jsonb_agg(\r\n          jsonb_build_object(\r\n            'id',              m.id,\r\n            'title',           m.calendar_event_title,\r\n            'summary',         m.safe_summary,\r\n            'start_date_time', m.start_date_time,\r\n            'end_date_time',   m.end_date_time,\r\n            'has_summary',     (m.safe_summary IS NOT NULL)\r\n          ) ORDER BY m.start_date_time DESC\r\n        ),\r\n        '[]'\r\n      ) AS meetings\r\n    FROM org_people p\r\n    LEFT JOIN final_meetings m ON p.person_bot_ids && m.recall_bot_ids\r\n    GROUP BY p.id\r\n  )\r\n\r\n  -- 8) Final result assembly\r\n  SELECT jsonb_build_object(\r\n           'organization', (SELECT row_to_json(org_row) FROM org_row),\r\n           'people', jsonb_agg(\r\n             jsonb_build_object(\r\n               'id',           p.id,\r\n               'full_name',    p.full_name,\r\n               'email',        p.email,\r\n               'title',        p.title,\r\n               'phone_number', p.phone_number,\r\n               'content',      p.content,\r\n               'insights',     COALESCE(pi.insights, '[]'),\r\n               'meetings',     pm.meetings\r\n             )\r\n           )\r\n         )\r\n  INTO result\r\n  FROM org_row -- enforce org access\r\n  CROSS JOIN LATERAL (SELECT * FROM org_people) p\r\n  LEFT JOIN person_insights pi ON pi.person_id = p.id\r\n  LEFT JOIN person_meetings pm ON pm.person_id = p.id;\r\n\r\n  RETURN result;\r\nEND;\r\n"
+        },
+        {
+            "routine_name": "get_table_list",
+            "routine_type": "FUNCTION",
+            "data_type": "text",
+            "routine_definition": "\r\nBEGIN\r\n    RETURN QUERY\r\n    SELECT t.table_name::text\r\n    FROM information_schema.tables t\r\n    WHERE t.table_schema = schema_name \r\n    AND t.table_type = 'BASE TABLE'\r\n    ORDER BY t.table_name;\r\nEND;\r\n"
+        },
+        {
+            "routine_name": "get_table_schema",
+            "routine_type": "FUNCTION",
+            "data_type": "record",
+            "routine_definition": "\r\nBEGIN\r\n    RETURN QUERY\r\n    SELECT \r\n        c.column_name::text,\r\n        c.data_type::text,\r\n        (c.is_nullable = 'YES')::boolean,\r\n        c.column_default::text,\r\n        ARRAY[]::text[] as constraints\r\n    FROM information_schema.columns c\r\n    WHERE c.table_schema = schema_name \r\n    AND c.table_name = get_table_schema.table_name\r\n    ORDER BY c.ordinal_position;\r\nEND;\r\n"
+        },
+        {
+            "routine_name": "get_trigger_list",
+            "routine_type": "FUNCTION",
+            "data_type": "record",
+            "routine_definition": "\r\n  SELECT\r\n    ns.nspname AS event_object_schema,      -- schema of the table\r\n    c.relname AS event_object_table,        -- table name\r\n    t.tgname   AS trigger_name,             -- trigger name\r\n    pg_get_triggerdef(t.oid, true) AS trigger_def\r\n  FROM pg_trigger t\r\n  JOIN pg_class    c  ON t.tgrelid       = c.oid\r\n  JOIN pg_namespace ns ON c.relnamespace = ns.oid\r\n  WHERE NOT t.tgisinternal\r\n    AND ns.nspname = p_schema_name         -- now both sides are type `name`\r\n  ORDER BY c.relname, t.tgname;\r\n"
+        },
+        {
+            "routine_name": "get_user_and_bot_token",
+            "routine_type": "FUNCTION",
+            "data_type": "record",
+            "routine_definition": "\nBEGIN\n  RETURN QUERY\n  SELECT \n    i.user_id,\n    st.bot_token\n  FROM slack_teams st\n  LEFT JOIN integrations i ON i.data->>'slack_user_id' = p_slack_user_id\n  WHERE st.team_id = p_team_id\n  LIMIT 1;\nEND;\n"
+        },
+        {
+            "routine_name": "get_user_orgs_with_people_and_meetings",
+            "routine_type": "FUNCTION",
+            "data_type": "jsonb",
+            "routine_definition": "\r\nDECLARE\r\n  result JSONB;\r\nBEGIN\r\n  WITH user_spaces AS (\r\n    SELECT space_id\r\n    FROM space_members\r\n    WHERE user_id = p_user_id\r\n  ),\r\n  caller_sync AS (\r\n    SELECT id AS sync_id\r\n    FROM user_calendar_sync\r\n    WHERE user_id = p_user_id\r\n    LIMIT 1\r\n  ),\r\n  -- 1) Accessible orgs\r\n  accessible_orgs AS (\r\n    SELECT o.id, o.name, o.domain, ot.name AS type\r\n    FROM organizations o\r\n    LEFT JOIN organization_types ot ON ot.id = o.type_id\r\n    WHERE o.user_id = p_user_id\r\n       OR o.space_id IN (SELECT space_id FROM user_spaces)\r\n  ),\r\n  -- 2) Accessible people\r\n  accessible_people AS (\r\n    SELECT p.id,\r\n           p.full_name,\r\n           p.email,\r\n           p.title,\r\n           p.phone_number,\r\n           p.content,\r\n           p.outside_organisation_id AS org_id,\r\n           p.meetings_title AS person_bot_ids\r\n    FROM people p\r\n    WHERE p.outside_organisation_id IN (SELECT id FROM accessible_orgs)\r\n      AND (p.user_id = p_user_id OR p.space_id IN (SELECT space_id FROM user_spaces))\r\n  ),\r\n  -- 3) All meetings for people in org\r\n  all_meetings AS (\r\n    SELECT\r\n      e.id,\r\n      e.calendar_event_title,\r\n      e.meeting_summary,\r\n      e.start_date_time,\r\n      e.end_date_time,\r\n      e.recall_bot_ids,\r\n      e.user_calendar_sync_id,\r\n      p.org_id,\r\n      p.id AS person_id\r\n    FROM user_calendar_events_sync e\r\n    JOIN accessible_people p\r\n      ON p.person_bot_ids && e.recall_bot_ids\r\n  ),\r\n  -- 4) Deduplicate per org by bot id (first element)\r\n  deduped_meetings AS (\r\n    SELECT *\r\n    FROM (\r\n      SELECT am.*,\r\n             ROW_NUMBER() OVER (\r\n               PARTITION BY org_id, am.recall_bot_ids[1]\r\n               ORDER BY start_date_time DESC\r\n             ) AS dup_rank\r\n      FROM all_meetings am\r\n    ) ranked\r\n    WHERE dup_rank = 1\r\n  ),\r\n  -- 5) Limit per org\r\n  org_limited_meetings AS (\r\n    SELECT *\r\n    FROM (\r\n      SELECT dm.*,\r\n             ROW_NUMBER() OVER (\r\n               PARTITION BY org_id\r\n               ORDER BY start_date_time DESC\r\n             ) AS rn\r\n      FROM deduped_meetings dm\r\n    ) ranked\r\n    WHERE rn <= p_meeting_limit\r\n  ),\r\n  -- 6) Pre-aggregate person_ids per meeting\r\n  meeting_with_people AS (\r\n    SELECT\r\n      m.org_id,\r\n      m.id,\r\n      m.calendar_event_title,\r\n      m.meeting_summary,\r\n      m.start_date_time,\r\n      m.end_date_time,\r\n      m.recall_bot_ids,\r\n      m.user_calendar_sync_id,\r\n      jsonb_agg(DISTINCT m.person_id) AS person_ids\r\n    FROM org_limited_meetings m\r\n    GROUP BY m.org_id, m.id, m.calendar_event_title, m.meeting_summary,\r\n             m.start_date_time, m.end_date_time, m.recall_bot_ids, m.user_calendar_sync_id\r\n  ),\r\n  -- 7) Aggregate meetings at org level\r\n  org_meetings AS (\r\n    SELECT\r\n      org_id,\r\n      jsonb_agg(\r\n        jsonb_build_object(\r\n          'id', mwp.id,\r\n          'calendar_event_title', mwp.calendar_event_title,\r\n          'meeting_summary', CASE WHEN mwp.user_calendar_sync_id = (SELECT sync_id FROM caller_sync)\r\n                                  THEN mwp.meeting_summary ELSE NULL END,\r\n          'start_date_time', mwp.start_date_time,\r\n          'end_date_time', mwp.end_date_time,\r\n          'has_access', (mwp.user_calendar_sync_id = (SELECT sync_id FROM caller_sync)),\r\n          'person_ids', mwp.person_ids\r\n        ) ORDER BY mwp.start_date_time DESC\r\n      ) AS meetings\r\n    FROM meeting_with_people mwp\r\n    GROUP BY org_id\r\n  ),\r\n  -- 8) People per org\r\n  org_people AS (\r\n    SELECT\r\n      o.id AS org_id,\r\n      jsonb_agg(\r\n        jsonb_build_object(\r\n          'id', p.id,\r\n          'full_name', p.full_name,\r\n          'email', p.email,\r\n          'title', p.title,\r\n          'phone_number', p.phone_number,\r\n          'content', p.content\r\n        ) ORDER BY p.full_name\r\n      ) AS people\r\n    FROM accessible_orgs o\r\n    LEFT JOIN accessible_people p ON o.id = p.org_id\r\n    GROUP BY o.id\r\n  )\r\n  -- 9) Final JSON assembly\r\n  SELECT jsonb_agg(\r\n           jsonb_build_object(\r\n             'id', o.id,\r\n             'name', o.name,\r\n             'domain', o.domain,\r\n             'type', o.type,\r\n             'people', op.people,\r\n             'meetings', om.meetings\r\n           )\r\n         )\r\n  INTO result\r\n  FROM accessible_orgs o\r\n  LEFT JOIN org_people op ON o.id = op.org_id\r\n  LEFT JOIN org_meetings om ON o.id = om.org_id;\r\n\r\n  RETURN result;\r\nEND;\r\n"
+        },
+        {
+            "routine_name": "get_user_people_with_org_meetings_and_insights",
+            "routine_type": "FUNCTION",
+            "data_type": "jsonb",
+            "routine_definition": "\r\nDECLARE\r\n  result JSONB;\r\nBEGIN\r\n  WITH user_spaces AS (\r\n    SELECT space_id\r\n    FROM space_members\r\n    WHERE user_id = p_user_id\r\n  ),\r\n\r\n  -- All people the user can see, with org info\r\n  accessible_people AS (\r\n    SELECT p.id,\r\n           p.full_name,\r\n           p.email,\r\n           p.title,\r\n           p.phone_number,\r\n           p.content,\r\n           p.outside_organisation_id,\r\n           o.id   AS organization_id,\r\n           o.name AS organization_name,\r\n           o.domain AS organization_domain,\r\n           ot.name AS organization_type,\r\n           p.meetings_title AS person_bot_ids\r\n    FROM people p\r\n    LEFT JOIN organizations o ON o.id = p.outside_organisation_id\r\n    LEFT JOIN organization_types ot ON ot.id = o.type_id\r\n    WHERE p.user_id = p_user_id\r\n       OR p.space_id IN (SELECT space_id FROM user_spaces)\r\n  ),\r\n\r\n  -- Get the user's calendar sync id for meeting access\r\n  caller_sync AS (\r\n    SELECT id AS sync_id\r\n    FROM user_calendar_sync\r\n    WHERE user_id = p_user_id\r\n    LIMIT 1\r\n  ),\r\n\r\n  -- Insights for accessible people\r\n  person_insights AS (\r\n    SELECT\r\n      i.person_id,\r\n      jsonb_agg(\r\n        jsonb_build_object(\r\n          'id',         i.id,\r\n          'name',       i.name,\r\n          'quote',      i.direct_quote,\r\n          'details',    i.details,\r\n          'created_at', i.created_at,\r\n          'updated_at', i.updated_at,\r\n          'status',     st.name,\r\n          'priority',   pt.name,\r\n          'type',       tt.name\r\n        )\r\n      ) AS insights\r\n    FROM insights i\r\n    JOIN insight_statuses st ON st.id = i.status_id\r\n    JOIN insight_priorities pt ON pt.id = i.priority_id\r\n    JOIN insight_types tt ON tt.id = i.type_id\r\n    WHERE i.person_id IN (SELECT id FROM accessible_people)\r\n    GROUP BY i.person_id\r\n  ),\r\n\r\n  -- Deduplicated meetings for all accessible people\r\n  all_meetings AS (\r\n    SELECT *\r\n    FROM (\r\n      SELECT\r\n        e.calendar_event_title,\r\n        e.start_date_time,\r\n        e.end_date_time,\r\n        e.recall_bot_ids,\r\n        MIN(e.id) AS id,\r\n        MAX(CASE\r\n              WHEN e.user_calendar_sync_id = (SELECT sync_id FROM caller_sync)\r\n              THEN e.meeting_summary::TEXT\r\n              ELSE NULL\r\n            END)::JSONB AS safe_summary,\r\n        ROW_NUMBER() OVER (\r\n          PARTITION BY e.calendar_event_title, e.start_date_time\r\n          ORDER BY e.start_date_time DESC\r\n        ) AS dedup_rank\r\n      FROM user_calendar_events_sync e\r\n      JOIN accessible_people p ON p.person_bot_ids && e.recall_bot_ids\r\n      GROUP BY\r\n        e.calendar_event_title,\r\n        e.start_date_time,\r\n        e.end_date_time,\r\n        e.recall_bot_ids\r\n    ) t\r\n    WHERE dedup_rank = 1\r\n  ),\r\n\r\n  -- Apply per-person limit\r\n  person_limited_meetings AS (\r\n    SELECT *\r\n    FROM (\r\n      SELECT\r\n        e.*,\r\n        ROW_NUMBER() OVER (\r\n          PARTITION BY p.id\r\n          ORDER BY e.start_date_time DESC\r\n        ) AS rn\r\n      FROM accessible_people p\r\n      LEFT JOIN all_meetings e\r\n        ON p.person_bot_ids && e.recall_bot_ids\r\n    ) sub\r\n    WHERE rn <= p_meeting_limit\r\n  ),\r\n\r\n  -- Aggregate per person\r\n  person_meetings AS (\r\n    SELECT\r\n      p.id AS person_id,\r\n      COALESCE(\r\n        jsonb_agg(\r\n          jsonb_build_object(\r\n            'id',              m.id,\r\n            'title',           m.calendar_event_title,\r\n            'summary',         m.safe_summary,\r\n            'start_date_time', m.start_date_time,\r\n            'end_date_time',   m.end_date_time,\r\n            'has_access',      (m.safe_summary IS NOT NULL)\r\n          ) ORDER BY m.start_date_time DESC\r\n        ),\r\n        '[]'\r\n      ) AS meetings\r\n    FROM accessible_people p\r\n    LEFT JOIN person_limited_meetings m ON p.person_bot_ids && m.recall_bot_ids\r\n    GROUP BY p.id\r\n  )\r\n\r\n  -- Final JSON output\r\n  SELECT jsonb_agg(\r\n           jsonb_build_object(\r\n             'id',             p.id,\r\n             'full_name',      p.full_name,\r\n             'email',          p.email,\r\n             'title',          p.title,\r\n             'phone_number',   p.phone_number,\r\n             'content',        p.content,\r\n             'organization',   jsonb_build_object(\r\n                                  'id',     p.organization_id,\r\n                                  'name',   p.organization_name,\r\n                                  'domain', p.organization_domain,\r\n                                  'type',   p.organization_type\r\n                                ),\r\n             'insights',       COALESCE(pi.insights, '[]'),\r\n             'meetings',       pm.meetings\r\n           )\r\n         )\r\n  INTO result\r\n  FROM accessible_people p\r\n  LEFT JOIN person_insights pi ON pi.person_id = p.id\r\n  LEFT JOIN person_meetings pm ON pm.person_id = p.id;\r\n\r\n  RETURN result;\r\nEND;\r\n"
+        },
+        {
+            "routine_name": "gin_extract_query_trgm",
+            "routine_type": "FUNCTION",
+            "data_type": "internal",
+            "routine_definition": null
+        },
+        {
+            "routine_name": "gin_extract_value_trgm",
+            "routine_type": "FUNCTION",
+            "data_type": "internal",
+            "routine_definition": null
+        },
+        {
+            "routine_name": "gin_trgm_consistent",
+            "routine_type": "FUNCTION",
+            "data_type": "boolean",
+            "routine_definition": null
+        },
+        {
+            "routine_name": "gin_trgm_triconsistent",
+            "routine_type": "FUNCTION",
+            "data_type": "\"char\"",
+            "routine_definition": null
+        },
+        {
+            "routine_name": "gtrgm_compress",
+            "routine_type": "FUNCTION",
+            "data_type": "internal",
+            "routine_definition": null
+        },
+        {
+            "routine_name": "gtrgm_consistent",
+            "routine_type": "FUNCTION",
+            "data_type": "boolean",
+            "routine_definition": null
+        },
+        {
+            "routine_name": "gtrgm_decompress",
+            "routine_type": "FUNCTION",
+            "data_type": "internal",
+            "routine_definition": null
+        },
+        {
+            "routine_name": "gtrgm_distance",
+            "routine_type": "FUNCTION",
+            "data_type": "double precision",
+            "routine_definition": null
+        },
+        {
+            "routine_name": "gtrgm_in",
+            "routine_type": "FUNCTION",
+            "data_type": "USER-DEFINED",
+            "routine_definition": null
+        },
+        {
+            "routine_name": "gtrgm_options",
+            "routine_type": "FUNCTION",
+            "data_type": "void",
+            "routine_definition": null
+        },
+        {
+            "routine_name": "gtrgm_out",
+            "routine_type": "FUNCTION",
+            "data_type": "cstring",
+            "routine_definition": null
+        },
+        {
+            "routine_name": "gtrgm_penalty",
+            "routine_type": "FUNCTION",
+            "data_type": "internal",
+            "routine_definition": null
+        },
+        {
+            "routine_name": "gtrgm_picksplit",
+            "routine_type": "FUNCTION",
+            "data_type": "internal",
+            "routine_definition": null
+        },
+        {
+            "routine_name": "gtrgm_same",
+            "routine_type": "FUNCTION",
+            "data_type": "internal",
+            "routine_definition": null
+        },
+        {
+            "routine_name": "gtrgm_union",
+            "routine_type": "FUNCTION",
+            "data_type": "USER-DEFINED",
+            "routine_definition": null
+        },
+        {
+            "routine_name": "handle_new_auth_user",
+            "routine_type": "FUNCTION",
+            "data_type": "trigger",
+            "routine_definition": "\r\nbegin\r\n  insert into public.users (id, email, full_name, avatar_url)\r\n  select\r\n    new.id,\r\n    new.email,\r\n    new.raw_user_meta_data->>'full_name',\r\n    COALESCE(jsonb_extract_path_text(new.raw_user_meta_data, 'picture'), jsonb_extract_path_text(new.raw_user_meta_data, 'avatar_url'), NULL);\r\n  return new;\r\nend;\r\n"
+        },
+        {
+            "routine_name": "link_insights_to_task",
+            "routine_type": "FUNCTION",
+            "data_type": "jsonb",
+            "routine_definition": "\r\nDECLARE\r\n    v_authorized boolean := false;\r\n    v_task_exists boolean;\r\n    v_authorized_insights uuid[] := '{}';\r\n    v_unauthorized_insights uuid[] := '{}';\r\n    v_insight_id uuid;\r\n    v_result jsonb;\r\nBEGIN\r\n    -- Set current user context\r\n    PERFORM set_config('app.current_user_id', p_user_id::text, true);\r\n    \r\n    -- Check if user has access to the task\r\n    SELECT EXISTS (\r\n        SELECT 1 FROM tasks t\r\n        WHERE t.id = p_task_id AND (\r\n            t.user_id = p_user_id OR \r\n            t.space_id IN (SELECT space_id FROM space_members WHERE user_id = p_user_id) OR\r\n            EXISTS (SELECT 1 FROM space_tasks st JOIN space_members sm ON st.space_id = sm.space_id \r\n                   WHERE st.task_id = t.id AND sm.user_id = p_user_id)\r\n        )\r\n    ) INTO v_task_exists;\r\n    \r\n    IF NOT v_task_exists THEN\r\n        RETURN jsonb_build_object(\r\n            'success', false,\r\n            'message', 'Task not found or you do not have access to it',\r\n            'linked_insights', '{}'::uuid[]\r\n        );\r\n    END IF;\r\n    \r\n    -- Check which insights the user has access to\r\n    FOREACH v_insight_id IN ARRAY p_insight_ids\r\n    LOOP\r\n        IF EXISTS (\r\n            SELECT 1 FROM insights i\r\n            WHERE i.id = v_insight_id AND (\r\n                i.user_id = p_user_id OR\r\n                i.space_id IN (SELECT space_id FROM space_members WHERE user_id = p_user_id)\r\n            )\r\n        ) THEN\r\n            v_authorized_insights := array_append(v_authorized_insights, v_insight_id);\r\n        ELSE\r\n            v_unauthorized_insights := array_append(v_unauthorized_insights, v_insight_id);\r\n        END IF;\r\n    END LOOP;\r\n    \r\n    -- Link authorized insights to the task\r\n    IF array_length(v_authorized_insights, 1) > 0 THEN\r\n        INSERT INTO insight_task (insight_id, task_id)\r\n        SELECT unnest(v_authorized_insights), p_task_id\r\n        ON CONFLICT (insight_id, task_id) DO NOTHING;\r\n    END IF;\r\n    \r\n    -- Build result\r\n    v_result := jsonb_build_object(\r\n        'success', COALESCE(array_length(v_authorized_insights, 1) > 0, false),\r\n        'linked_insights', v_authorized_insights,\r\n        'message', CASE \r\n            WHEN array_length(v_unauthorized_insights, 1) > 0 \r\n            THEN 'Some insights could not be linked due to insufficient permissions'\r\n            ELSE 'All insights linked successfully'\r\n        END\r\n    );\r\n    \r\n    -- Add unauthorized insights to result if any\r\n    IF array_length(v_unauthorized_insights, 1) > 0 THEN\r\n        v_result := v_result || jsonb_build_object('unauthorized_insights', v_unauthorized_insights);\r\n    END IF;\r\n    \r\n    RETURN v_result;\r\nEND;\r\n"
+        },
+        {
+            "routine_name": "link_tasks_to_insight",
+            "routine_type": "FUNCTION",
+            "data_type": "jsonb",
+            "routine_definition": "\r\nDECLARE\r\n    v_insight_exists boolean;\r\n    v_authorized_tasks uuid[] := '{}';\r\n    v_unauthorized_tasks uuid[] := '{}';\r\n    v_task_id uuid;\r\n    v_result jsonb;\r\nBEGIN\r\n    -- Set current user context\r\n    PERFORM set_config('app.current_user_id', p_user_id::text, true);\r\n    \r\n    -- Check if user has access to the insight\r\n    SELECT EXISTS (\r\n        SELECT 1 FROM insights i\r\n        WHERE i.id = p_insight_id AND (\r\n            i.user_id = p_user_id OR\r\n            i.space_id IN (SELECT space_id FROM space_members WHERE user_id = p_user_id)\r\n        )\r\n    ) INTO v_insight_exists;\r\n    \r\n    IF NOT v_insight_exists THEN\r\n        RETURN jsonb_build_object(\r\n            'success', false,\r\n            'message', 'Insight not found or you do not have access to it',\r\n            'linked_tasks', '{}'::uuid[]\r\n        );\r\n    END IF;\r\n    \r\n    -- Check which tasks the user has access to\r\n    FOREACH v_task_id IN ARRAY p_task_ids\r\n    LOOP\r\n        IF EXISTS (\r\n            SELECT 1 FROM tasks t\r\n            WHERE t.id = v_task_id AND (\r\n                t.user_id = p_user_id OR \r\n                t.space_id IN (SELECT space_id FROM space_members WHERE user_id = p_user_id) OR\r\n                EXISTS (SELECT 1 FROM space_tasks st JOIN space_members sm ON st.space_id = sm.space_id \r\n                       WHERE st.task_id = t.id AND sm.user_id = p_user_id)\r\n            )\r\n        ) THEN\r\n            v_authorized_tasks := array_append(v_authorized_tasks, v_task_id);\r\n        ELSE\r\n            v_unauthorized_tasks := array_append(v_unauthorized_tasks, v_task_id);\r\n        END IF;\r\n    END LOOP;\r\n    \r\n    -- Link authorized tasks to the insight\r\n    IF array_length(v_authorized_tasks, 1) > 0 THEN\r\n        INSERT INTO insight_task (insight_id, task_id)\r\n        SELECT p_insight_id, unnest(v_authorized_tasks)\r\n        ON CONFLICT (insight_id, task_id) DO NOTHING;\r\n    END IF;\r\n    \r\n    -- Build result\r\n    v_result := jsonb_build_object(\r\n        'success', COALESCE(array_length(v_authorized_tasks, 1) > 0, false),\r\n        'linked_tasks', v_authorized_tasks,\r\n        'message', CASE \r\n            WHEN array_length(v_unauthorized_tasks, 1) > 0 \r\n            THEN 'Some tasks could not be linked due to insufficient permissions'\r\n            ELSE 'All tasks linked successfully'\r\n        END\r\n    );\r\n    \r\n    -- Add unauthorized tasks to result if any\r\n    IF array_length(v_unauthorized_tasks, 1) > 0 THEN\r\n        v_result := v_result || jsonb_build_object('unauthorized_tasks', v_unauthorized_tasks);\r\n    END IF;\r\n    \r\n    RETURN v_result;\r\nEND;\r\n"
+        },
+        {
+            "routine_name": "log_insight_task_changes",
+            "routine_type": "FUNCTION",
+            "data_type": "trigger",
+            "routine_definition": "\r\nDECLARE\r\n    insight_name text;\r\n    task_name text;\r\n    change_description text;\r\n    current_user_id uuid;\r\n  BEGIN\r\n    -- Try to get current user ID from various sources\r\n    current_user_id := COALESCE(\r\n      current_setting('app.current_user_id', true)::uuid,\r\n      auth.uid()\r\n    );\r\n    \r\n    -- Get insight and task names for better changelog descriptions\r\n    IF TG_OP = 'INSERT' THEN\r\n      -- Get insight name\r\n      SELECT name INTO insight_name FROM insights WHERE id = NEW.insight_id;\r\n      -- Get task name\r\n      SELECT name INTO task_name FROM tasks WHERE id = NEW.task_id;\r\n\r\n      change_description := 'Linked to insight: ' || COALESCE(insight_name, 'Unknown insight');\r\n\r\n      -- Log the linking in the tasks changelog\r\n      INSERT INTO tasks_changelog (\r\n        task_id,\r\n        operation_type,\r\n        changed_by,\r\n        old_values,\r\n        new_values,\r\n        change_description\r\n      ) VALUES (\r\n        NEW.task_id,\r\n        'UPDATE',  -- Changed from 'INSIGHT_LINKED' to 'UPDATE'\r\n        current_user_id,\r\n        NULL,\r\n        jsonb_build_object(\r\n          'insight_id', NEW.insight_id,\r\n          'insight_name', insight_name,\r\n          'linked_at', NEW.created_at\r\n        ),\r\n        change_description\r\n      );\r\n\r\n      RETURN NEW;\r\n\r\n    ELSIF TG_OP = 'DELETE' THEN\r\n      -- Get insight name\r\n      SELECT name INTO insight_name FROM insights WHERE id = OLD.insight_id;\r\n      -- Get task name\r\n      SELECT name INTO task_name FROM tasks WHERE id = OLD.task_id;\r\n\r\n      change_description := 'Unlinked from insight: ' || COALESCE(insight_name, 'Unknown insight');\r\n\r\n      -- Log the unlinking in the tasks changelog\r\n      INSERT INTO tasks_changelog (\r\n        task_id,\r\n        operation_type,\r\n        changed_by,\r\n        old_values,\r\n        new_values,\r\n        change_description\r\n      ) VALUES (\r\n        OLD.task_id,\r\n        'UPDATE',  -- Changed from 'INSIGHT_UNLINKED' to 'UPDATE'\r\n        current_user_id,\r\n        jsonb_build_object(\r\n          'insight_id', OLD.insight_id,\r\n          'insight_name', insight_name,\r\n          'linked_at', OLD.created_at\r\n        ),\r\n        NULL,\r\n        change_description\r\n      );\r\n\r\n      RETURN OLD;\r\n    END IF;\r\n\r\n    RETURN NULL;\r\n  END;\r\n"
+        },
+        {
+            "routine_name": "log_tasks_changes",
+            "routine_type": "FUNCTION",
+            "data_type": "trigger",
+            "routine_definition": "\r\nDECLARE\r\n  old_changed_values jsonb := '{}'::jsonb;\r\n  new_changed_values jsonb := '{}'::jsonb;\r\n  changed_fields_array text[] := '{}';\r\n  field_name text;\r\n  current_user_id uuid;\r\nBEGIN\r\n  -- Try to get current user ID from various sources\r\n  current_user_id := COALESCE(\r\n    current_setting('app.current_user_id', true)::uuid,\r\n    auth.uid()\r\n  );\r\n  \r\n  -- Handle different operation types    \r\n  IF TG_OP = 'INSERT' THEN\r\n    -- For INSERT: store all non-default values in new_values (initial state)\r\n    new_changed_values := to_jsonb(NEW);\r\n    \r\n    INSERT INTO tasks_changelog (\r\n      task_id,\r\n      operation_type,\r\n      changed_by,\r\n      old_values,\r\n      new_values,\r\n      change_description\r\n    ) VALUES (\r\n      NEW.id,\r\n      'INSERT',\r\n      current_user_id,\r\n      NULL,\r\n      new_changed_values,\r\n      'Task created'\r\n    );\r\n    \r\n    RETURN NEW;\r\n    \r\n  ELSIF TG_OP = 'UPDATE' THEN\r\n    -- For UPDATE: only store values of fields that actually changed\r\n    FOR field_name IN \r\n      SELECT jsonb_object_keys(to_jsonb(NEW))\r\n    LOOP\r\n      IF (to_jsonb(OLD)->field_name) IS DISTINCT FROM (to_jsonb(NEW)->field_name) THEN\r\n        changed_fields_array := array_append(changed_fields_array, field_name);\r\n        old_changed_values := old_changed_values || jsonb_build_object(field_name, to_jsonb(OLD)->field_name);\r\n        new_changed_values := new_changed_values || jsonb_build_object(field_name, to_jsonb(NEW)->field_name);\r\n      END IF;\r\n    END LOOP;\r\n    \r\n    -- Only log if there were actual changes (excluding updated_at)\r\n    IF array_length(changed_fields_array, 1) > 0 AND \r\n       NOT (array_length(changed_fields_array, 1) = 1 AND 'updated_at' = ANY(changed_fields_array)) THEN\r\n      \r\n      INSERT INTO tasks_changelog (\r\n        task_id,\r\n        operation_type,\r\n        changed_by,\r\n        old_values,\r\n        new_values,\r\n        changed_fields,\r\n        change_description\r\n      ) VALUES (\r\n        NEW.id,\r\n        'UPDATE',\r\n        current_user_id,\r\n        old_changed_values,\r\n        new_changed_values,\r\n        changed_fields_array,\r\n        'Task updated: ' || array_to_string(changed_fields_array, ', ')\r\n      );\r\n    END IF;\r\n    \r\n    RETURN NEW;\r\n  END IF;\r\n  \r\n  RETURN NULL;\r\nEND;\r\n"
+        },
+        {
+            "routine_name": "moddatetime",
+            "routine_type": "FUNCTION",
+            "data_type": "trigger",
+            "routine_definition": null
+        },
+        {
+            "routine_name": "refresh_task_duplicates",
+            "routine_type": "FUNCTION",
+            "data_type": "void",
+            "routine_definition": "BEGIN\r\n  -------------------------------------------------------------------\r\n  -- 1. Basic validation: either p_user_id or p_space_id must be provided\r\n  -------------------------------------------------------------------\r\n  IF p_user_id IS NULL AND p_space_id IS NULL THEN\r\n    RAISE EXCEPTION 'Either p_user_id or p_space_id must be provided.';\r\n  END IF;\r\n\r\n  ------------------------------------------------------------------------------------------\r\n  -- 2. Build a list of target task IDs:\r\n  ------------------------------------------------------------------------------------------\r\n  WITH target_task_ids AS (\r\n    -- user\u2010only branch (no space)\r\n    SELECT t.id AS task_id\r\n    FROM public.tasks t\r\n    WHERE p_user_id  IS NOT NULL\r\n      AND p_space_id IS NULL\r\n      AND t.user_id  = p_user_id\r\n\r\n    UNION\r\n\r\n    -- space branch\r\n    SELECT st.task_id\r\n    FROM public.space_tasks st\r\n    WHERE p_space_id IS NOT NULL\r\n      AND st.space_id = p_space_id\r\n  )\r\n\r\n  -------------------------------------------------------------------\r\n  -- 3. Delete any existing duplicate relations for those task IDs\r\n  -------------------------------------------------------------------\r\n  DELETE FROM public.task_duplicates td\r\n  WHERE td.task_id      IN (SELECT task_id FROM target_task_ids)\r\n     OR td.duplicate_id IN (SELECT task_id FROM target_task_ids);\r\n\r\n  ----------------------------------------------------------------------------------\r\n  -- 4. Insert new duplicate pairs from p_pairs JSONB, skipping conflicts\r\n  ----------------------------------------------------------------------------------\r\n  INSERT INTO public.task_duplicates (task_id, duplicate_id)\r\n  SELECT\r\n    (elem->>'task_id')::UUID,\r\n    (elem->>'duplicate_id')::UUID\r\n  FROM jsonb_array_elements(p_pairs) AS arr(elem)\r\n  ON CONFLICT (task_id, duplicate_id) DO NOTHING;  -- \u2190 ignore existing keys\r\n\r\n  -- 5. Done\r\n  RETURN;\r\nEND;"
+        },
+        {
+            "routine_name": "remove_user_tasks_from_space",
+            "routine_type": "FUNCTION",
+            "data_type": "trigger",
+            "routine_definition": "\r\nBEGIN\r\n  -- Delete all space_tasks where the task belongs to the removed user and the space matches\r\n  DELETE FROM public.space_tasks st\r\n  USING tasks t\r\n  WHERE st.task_id = t.id\r\n    AND t.user_id = OLD.user_id\r\n    AND st.space_id = OLD.space_id;\r\n\r\n  RETURN OLD;\r\nEND;\r\n"
+        },
+        {
+            "routine_name": "replace_insights_for_bot",
+            "routine_type": "FUNCTION",
+            "data_type": "void",
+            "routine_definition": "\r\nDECLARE\r\n  existing_ids uuid[] := ARRAY(\r\n    SELECT (elem->>'id')::uuid\r\n    FROM jsonb_array_elements(p_insights) AS elem\r\n    WHERE (elem->>'id') IS NOT NULL\r\n  );\r\n\r\n  new_ids uuid[];\r\nBEGIN\r\n  -- 1) UPSERT existing insights\r\n  INSERT INTO public.insights (\r\n    id,\r\n    updated_at,\r\n    user_id,\r\n    space_id,\r\n    name,\r\n    direct_quote,\r\n    type_id,\r\n    priority_id,\r\n    details,\r\n    person_id,\r\n    source_bot_id\r\n  )\r\n  SELECT\r\n    i.id,\r\n    NOW(),\r\n    i.user_id,\r\n    i.space_id,\r\n    i.name,\r\n    i.direct_quote,\r\n    i.type_id,\r\n    i.priority_id,\r\n    i.details,\r\n    i.person_id,\r\n    p_bot_id  -- Overwrite source_bot_id to current bot\r\n  FROM jsonb_to_recordset(p_insights) AS i(\r\n    id             uuid,\r\n    user_id        uuid,\r\n    space_id       uuid,\r\n    name           text,\r\n    direct_quote   text,\r\n    type_id        bigint,\r\n    priority_id    bigint,\r\n    details        text,\r\n    person_id      uuid\r\n  )\r\n  WHERE i.id IS NOT NULL\r\n  ON CONFLICT (id) DO UPDATE\r\n    SET\r\n      updated_at      = EXCLUDED.updated_at,\r\n      user_id         = EXCLUDED.user_id,\r\n      space_id        = EXCLUDED.space_id,\r\n      name            = EXCLUDED.name,\r\n      direct_quote    = EXCLUDED.direct_quote,\r\n      type_id         = EXCLUDED.type_id,\r\n      priority_id     = EXCLUDED.priority_id,\r\n      details         = EXCLUDED.details,\r\n      person_id       = EXCLUDED.person_id,\r\n      source_bot_id   = EXCLUDED.source_bot_id;\r\n\r\n  -- 2) INSERT new insights (no ID) and collect new IDs\r\n  WITH new_inserts AS (\r\n    INSERT INTO public.insights (\r\n      user_id,\r\n      space_id,\r\n      name,\r\n      direct_quote,\r\n      type_id,\r\n      priority_id,\r\n      details,\r\n      person_id,\r\n      source_bot_id\r\n    )\r\n    SELECT\r\n      i.user_id,\r\n      i.space_id,\r\n      i.name,\r\n      i.direct_quote,\r\n      i.type_id,\r\n      i.priority_id,\r\n      i.details,\r\n      i.person_id,\r\n      p_bot_id\r\n    FROM jsonb_to_recordset(p_insights) AS i(\r\n      id             uuid,        \r\n      user_id        uuid,\r\n      space_id       uuid,\r\n      name           text,\r\n      direct_quote   text,\r\n      type_id        bigint,\r\n      priority_id    bigint,\r\n      details        text,\r\n      person_id      uuid\r\n    )\r\n    WHERE i.id IS NULL\r\n    RETURNING id\r\n  )\r\n  SELECT array_agg(id) INTO new_ids FROM new_inserts;\r\n\r\n  -- 3) Combine all valid IDs (old + new)\r\n  existing_ids := existing_ids || COALESCE(new_ids, ARRAY[]::uuid[]);\r\n\r\n  -- 4) Delete stale insights for this bot\r\n  DELETE FROM public.insights\r\n  WHERE source_bot_id = p_bot_id\r\n    AND id <> ALL(existing_ids);\r\n\r\nEND;\r\n"
+        },
+        {
+            "routine_name": "replace_tasks_for_bot",
+            "routine_type": "FUNCTION",
+            "data_type": "void",
+            "routine_definition": "DECLARE\r\n  -- Collect IDs present in the payload (non-null only)\r\n  existing_ids UUID[] := ARRAY(\r\n    SELECT (elem->>'id')::uuid\r\n    FROM jsonb_array_elements(p_tasks) AS elem\r\n    WHERE (elem->>'id') IS NOT NULL\r\n  );\r\n\r\n  -- Will hold IDs of newly inserted rows\r\n  new_ids UUID[];\r\nBEGIN\r\n  ---------------------------------------------\r\n  -- 1) UPSERT tasks that already have an ID\r\n  ---------------------------------------------\r\n  INSERT INTO public.tasks (\r\n    id,\r\n    name,\r\n    description,\r\n    name_vector,\r\n    description_vector,\r\n    bot_ids,\r\n    user_id,\r\n    assigned_to_name,\r\n    assigned_to_email\r\n  )\r\n  SELECT\r\n    t.id,\r\n    t.name,\r\n    t.description,\r\n    t.name_vector,         -- vector column\r\n    t.description_vector,  -- vector column\r\n    ARRAY[p_bot_id]::text[],       -- reset bot_ids to exactly this bot\r\n    t.user_id,\r\n    t.assigned_to_name,\r\n    t.assigned_to_email\r\n  FROM jsonb_to_recordset(p_tasks) AS t(\r\n    id                   uuid,\r\n    name                 text,\r\n    description          text,\r\n    name_vector          vector,  -- pgvector type\r\n    description_vector   vector,  -- pgvector type\r\n    user_id              uuid,\r\n    assigned_to_name     text,\r\n    assigned_to_email    text\r\n  )\r\n  WHERE t.id IS NOT NULL\r\n  ON CONFLICT (id) DO UPDATE\r\n    SET\r\n      name                = EXCLUDED.name,\r\n      description         = EXCLUDED.description,\r\n      name_vector         = EXCLUDED.name_vector,        -- update vector\r\n      description_vector  = EXCLUDED.description_vector, -- update vector\r\n      bot_ids             = EXCLUDED.bot_ids,\r\n      user_id             = EXCLUDED.user_id,\r\n      assigned_to_name    = EXCLUDED.assigned_to_name,\r\n      assigned_to_email   = EXCLUDED.assigned_to_email;\r\n\r\n  ---------------------------------------------\r\n  -- 2) INSERT tasks missing an ID, collect new IDs\r\n  ---------------------------------------------\r\n  WITH new_inserts AS (\r\n    INSERT INTO public.tasks (\r\n      name,\r\n      description,\r\n      name_vector,\r\n      description_vector,\r\n      bot_ids,\r\n      user_id,\r\n      assigned_to_name,\r\n      assigned_to_email\r\n    )\r\n    SELECT\r\n      t.name,\r\n      t.description,\r\n      t.name_vector,         -- include vector on insert\r\n      t.description_vector,  -- include vector on insert\r\n      ARRAY[p_bot_id]::text[],\r\n      t.user_id,\r\n      t.assigned_to_name,\r\n      t.assigned_to_email\r\n    FROM jsonb_to_recordset(p_tasks) AS t(\r\n      id                   uuid,\r\n      name                 text,\r\n      description          text,\r\n      name_vector          vector,\r\n      description_vector   vector,\r\n      user_id              uuid,\r\n      assigned_to_name     text,\r\n      assigned_to_email    text\r\n    )\r\n    WHERE t.id IS NULL\r\n    RETURNING id\r\n  )\r\n  SELECT array_agg(id) INTO new_ids FROM new_inserts;\r\n\r\n  ---------------------------------------------\r\n  -- 3) Combine provided IDs + newly generated IDs\r\n  ---------------------------------------------\r\n  existing_ids := existing_ids || COALESCE(new_ids, ARRAY[]::uuid[]);\r\n\r\n  ---------------------------------------------\r\n  -- 4) DELETE stale tasks for this bot\r\n  ---------------------------------------------\r\n  DELETE FROM public.tasks\r\n  WHERE p_bot_id = ANY(bot_ids)\r\n    AND id <> ALL(existing_ids);\r\n\r\nEND;"
+        },
+        {
+            "routine_name": "search_bets_by_keywords",
+            "routine_type": "FUNCTION",
+            "data_type": "record",
+            "routine_definition": "\r\nBEGIN\r\n  -- 1. No keywords \u2192 return nothing\r\n  IF keywords IS NULL OR array_length(keywords, 1) = 0 THEN\r\n    RETURN;\r\n  END IF;\r\n\r\n  -- 2. Must supply at least one of user_id or space_id\r\n  IF p_user_id IS NULL AND p_space_id IS NULL THEN\r\n    RAISE EXCEPTION 'Must provide at least one of p_user_id or p_space_id';\r\n  END IF;\r\n\r\n  -- 3. Main query\r\n  RETURN QUERY\r\n  SELECT\r\n    b.id,\r\n    b.name,\r\n    b.description\r\n  FROM public.bets AS b\r\n  WHERE\r\n    -- skip bets with empty or NULL description\r\n    b.description IS NOT NULL\r\n    AND length(trim(b.description)) > 0\r\n\r\n    -- match any keyword in name OR description\r\n    AND EXISTS (\r\n      SELECT 1\r\n        FROM unnest(keywords) AS kw\r\n       WHERE b.name        ILIKE '%' || kw || '%'\r\n          OR b.description ILIKE '%' || kw || '%'\r\n    )\r\n\r\n    -- scope by space_bets if space_id provided,\r\n    -- otherwise by b.owner_id = p_user_id\r\n    AND (\r\n      (\r\n        p_space_id IS NOT NULL\r\n        AND EXISTS (\r\n          SELECT 1\r\n          FROM public.space_bets AS sb\r\n          WHERE sb.space_id = p_space_id\r\n            AND sb.bet_id   = b.id\r\n        )\r\n      )\r\n      OR (\r\n        p_space_id IS NULL\r\n        AND b.owner_id = p_user_id\r\n      )\r\n    );\r\nEND;\r\n"
+        },
+        {
+            "routine_name": "search_insights_by_keywords",
+            "routine_type": "FUNCTION",
+            "data_type": "record",
+            "routine_definition": "\r\nBEGIN\r\n  -- 1. If no keywords provided, return nothing\r\n  IF keywords IS NULL OR array_length(keywords, 1) = 0 THEN\r\n    RETURN;\r\n  END IF;\r\n\r\n  -- 2. Require at least one of p_user_id or p_space_id\r\n  IF p_user_id IS NULL AND p_space_id IS NULL THEN\r\n    RAISE EXCEPTION 'Must provide at least one of p_user_id or p_space_id';\r\n  END IF;\r\n\r\n  -- 3. Main query\r\n  RETURN QUERY\r\n  SELECT\r\n    i.id,\r\n    i.name,\r\n    i.details\r\n  FROM public.insights AS i\r\n  WHERE\r\n    -- skip insights with NULL or empty details\r\n    i.details IS NOT NULL\r\n    AND length(trim(i.details)) > 0\r\n\r\n    -- match any keyword in name OR details (case\u2010insensitive)\r\n    AND EXISTS (\r\n      SELECT 1\r\n      FROM unnest(keywords) AS kw\r\n      WHERE i.name    ILIKE '%' || kw || '%'\r\n         OR i.details ILIKE '%' || kw || '%'\r\n    )\r\n\r\n    -- scope by space_id if provided, otherwise by i.user_id\r\n    AND (\r\n      ( p_space_id IS NOT NULL AND i.space_id = p_space_id )\r\n      OR ( p_space_id IS NULL     AND i.user_id  = p_user_id )\r\n    );\r\nEND;\r\n"
+        },
+        {
+            "routine_name": "search_similar_meeting_titles",
+            "routine_type": "FUNCTION",
+            "data_type": "record",
+            "routine_definition": "\nbegin\n  return query\n  select distinct \n    uce.calendar_event_title,\n    cast(\n      case when normalize_case then\n        similarity(lower(uce.calendar_event_title), lower(search_term))\n      else\n        similarity(uce.calendar_event_title, search_term)\n      end as double precision\n    ) as similarity_score  -- Explicitly cast to double precision\n  from user_calendar_events_sync uce\n  where \n    case when normalize_case then\n      similarity(lower(uce.calendar_event_title), lower(search_term)) > similarity_threshold\n      or lower(uce.calendar_event_title) % lower(search_term)  -- Uses trigram matching\n    else\n      similarity(uce.calendar_event_title, search_term) > similarity_threshold\n      or uce.calendar_event_title % search_term\n    end\n  order by similarity_score desc;\nend;\n"
+        },
+        {
+            "routine_name": "search_similar_meeting_titles",
+            "routine_type": "FUNCTION",
+            "data_type": "record",
+            "routine_definition": "\nbegin\n  return query\n  select distinct \n    uce.calendar_event_title,\n    cast(\n      case when normalize_case then\n        similarity(lower(uce.calendar_event_title), lower(search_term))\n      else\n        similarity(uce.calendar_event_title, search_term)\n      end as double precision\n    ) as similarity_score,  -- Explicitly cast to double precision\n    uce.start_date_time,    -- Include start_date_time in the result\n    uce.end_date_time       -- Include end_date_time in the result\n  from user_calendar_events_sync uce\n  where \n    (uce.start_date_time >= start_date and uce.end_date_time <= end_date) and  -- Filter by date range\n    case when normalize_case then\n      similarity(lower(uce.calendar_event_title), lower(search_term)) > similarity_threshold\n      or lower(uce.calendar_event_title) % lower(search_term)  -- Uses trigram matching\n    else\n      similarity(uce.calendar_event_title, search_term) > similarity_threshold\n      or uce.calendar_event_title % search_term\n    end\n  order by similarity_score desc;\nend;\n"
+        },
+        {
+            "routine_name": "search_similar_meeting_titles",
+            "routine_type": "FUNCTION",
+            "data_type": "text",
+            "routine_definition": "\nbegin\n  return query\n  select distinct uce.calendar_event_title\n  from user_calendar_events_sync uce\n  where similarity(lower(uce.calendar_event_title), lower(search_term)) > similarity_threshold\n  or lower(uce.calendar_event_title) % lower(search_term)  -- Uses trigram matching\n  order by similarity(lower(uce.calendar_event_title), lower(search_term)) desc;\nend;\n"
+        },
+        {
+            "routine_name": "search_similar_meeting_titles",
+            "routine_type": "FUNCTION",
+            "data_type": "record",
+            "routine_definition": "\nbegin\n  return query\n  select distinct \n    uce.calendar_event_title,\n    cast(\n      case when normalize_case then\n        similarity(lower(uce.calendar_event_title), lower(search_term))\n      else\n        similarity(uce.calendar_event_title, search_term)\n      end as double precision\n    ) as similarity_score,\n    uce.start_date_time,\n    uce.end_date_time\n  from user_calendar_events_sync uce\n  where \n    uce.user_calendar_sync_id = $2 and  -- Use positional parameter reference\n    (uce.start_date_time >= start_date and uce.end_date_time <= end_date) and\n    case when normalize_case then\n      similarity(lower(uce.calendar_event_title), lower(search_term)) > similarity_threshold\n      or lower(uce.calendar_event_title) % lower(search_term)\n    else\n      similarity(uce.calendar_event_title, search_term) > similarity_threshold\n      or uce.calendar_event_title % search_term\n    end\n  order by similarity_score desc;\nend;\n"
+        },
+        {
+            "routine_name": "search_tasks_by_keywords",
+            "routine_type": "FUNCTION",
+            "data_type": "record",
+            "routine_definition": "\r\nBEGIN\r\n  -- 1. No keywords \u2192 no rows\r\n  IF keywords IS NULL OR array_length(keywords,1) = 0 THEN\r\n    RETURN;\r\n  END IF;\r\n\r\n  -- 2. Require at least one of user_id or space_id\r\n  IF p_user_id IS NULL AND p_space_id IS NULL THEN\r\n    RAISE EXCEPTION 'Must provide at least one of p_user_id or p_space_id';\r\n  END IF;\r\n\r\n  RETURN QUERY\r\n  SELECT\r\n    t.id,\r\n    t.name,\r\n    t.description\r\n  FROM public.tasks AS t\r\n  WHERE\r\n    -- skip tasks with no description\r\n    t.description IS NOT NULL\r\n    AND length(trim(t.description)) > 0\r\n\r\n    -- match any keyword in name OR description\r\n    AND EXISTS (\r\n      SELECT 1\r\n      FROM unnest(keywords) AS kw\r\n      WHERE t.name        ILIKE '%' || kw || '%'\r\n         OR t.description ILIKE '%' || kw || '%'\r\n    )\r\n\r\n    -- scope by space_id or user_id\r\n    AND (\r\n      -- if space_id provided, only tasks linked in space_tasks\r\n      p_space_id IS NOT NULL\r\n      AND EXISTS (\r\n        SELECT 1\r\n        FROM public.space_tasks st\r\n        WHERE st.space_id = p_space_id\r\n          AND st.task_id  = t.id\r\n      )\r\n      -- otherwise (space_id null), require matching user_id\r\n      OR (p_space_id IS NULL AND t.user_id = p_user_id)\r\n    );\r\nEND;\r\n"
+        },
+        {
+            "routine_name": "search_user_calendar_events_by_keywords",
+            "routine_type": "FUNCTION",
+            "data_type": "record",
+            "routine_definition": "\r\nDECLARE\r\n  sync_id uuid;\r\nBEGIN\r\n  -- 1) No keywords \u2192 return nothing\r\n  IF keywords IS NULL OR array_length(keywords,1) = 0 THEN\r\n    RETURN;\r\n  END IF;\r\n\r\n  -- 2) p_user_id is required\r\n  IF p_user_id IS NULL THEN\r\n    RAISE EXCEPTION 'Must provide p_user_id';\r\n  END IF;\r\n\r\n  -- 3) Lookup calendar sync record\r\n  SELECT ucs.id\r\n    INTO sync_id\r\n    FROM public.user_calendar_sync AS ucs\r\n   WHERE ucs.user_id = p_user_id\r\n   LIMIT 1;\r\n\r\n  -- If no sync record, return nothing\r\n  IF sync_id IS NULL THEN\r\n    RETURN;\r\n  END IF;\r\n\r\n  -- 4) Fetch events ended in the last 2 weeks with non-empty transcription\r\n  --    then filter by keywords and limit final output to events_limit\r\n  RETURN QUERY\r\n  WITH recent_events AS (\r\n    SELECT\r\n      e.id,\r\n      e.calendar_event_title,\r\n      e.start_date_time,\r\n      e.end_date_time,\r\n      trim(both '\"' FROM e.transcript::text) AS transcript,\r\n      trim(both '\"' FROM e.meeting_summary::text) AS summary,\r\n      trim(both '\"' FROM e.topics_discussed::text) AS topics_discussed\r\n    FROM public.user_calendar_events_sync AS e\r\n    WHERE\r\n      e.user_calendar_sync_id = sync_id\r\n      AND e.transcript IS NOT NULL\r\n      AND length(trim(both '\"' FROM e.transcript::text)) > 0\r\n      AND e.end_date_time >= now() - INTERVAL '14 days'\r\n  ), matched_events AS (\r\n    SELECT\r\n      re.id,\r\n      re.calendar_event_title,\r\n      re.start_date_time,\r\n      re.end_date_time,\r\n      re.summary,\r\n      re.topics_discussed\r\n    FROM recent_events AS re\r\n    WHERE EXISTS (\r\n      SELECT 1\r\n        FROM unnest(keywords) AS kw(keyword)\r\n       WHERE re.transcript ILIKE '%' || kw.keyword || '%'\r\n    )\r\n  )\r\n  SELECT\r\n    me.*\r\n  FROM matched_events AS me\r\n  ORDER BY me.end_date_time DESC\r\n  LIMIT events_limit;\r\nEND;\r\n"
+        },
+        {
+            "routine_name": "set_calendar_event_sync_main_id_on_insert",
+            "routine_type": "FUNCTION",
+            "data_type": "trigger",
+            "routine_definition": "\r\nBEGIN\r\n  -- Only set main_id if it's NULL\r\n  IF NEW.main_id IS NULL THEN\r\n    NEW.main_id := COALESCE(\r\n      NEW.provider_event_id,\r\n      NEW.adhoc_meeting_id::text,\r\n      gen_random_uuid()::text\r\n    );\r\n  END IF;\r\n  RETURN NEW;\r\nEND;\r\n"
+        },
+        {
+            "routine_name": "set_limit",
+            "routine_type": "FUNCTION",
+            "data_type": "real",
+            "routine_definition": null
+        },
+        {
+            "routine_name": "show_limit",
+            "routine_type": "FUNCTION",
+            "data_type": "real",
+            "routine_definition": null
+        },
+        {
+            "routine_name": "show_trgm",
+            "routine_type": "FUNCTION",
+            "data_type": "ARRAY",
+            "routine_definition": null
+        },
+        {
+            "routine_name": "similarity",
+            "routine_type": "FUNCTION",
+            "data_type": "real",
+            "routine_definition": null
+        },
+        {
+            "routine_name": "similarity_dist",
+            "routine_type": "FUNCTION",
+            "data_type": "real",
+            "routine_definition": null
+        },
+        {
+            "routine_name": "similarity_op",
+            "routine_type": "FUNCTION",
+            "data_type": "boolean",
+            "routine_definition": null
+        },
+        {
+            "routine_name": "strict_word_similarity",
+            "routine_type": "FUNCTION",
+            "data_type": "real",
+            "routine_definition": null
+        },
+        {
+            "routine_name": "strict_word_similarity_commutator_op",
+            "routine_type": "FUNCTION",
+            "data_type": "boolean",
+            "routine_definition": null
+        },
+        {
+            "routine_name": "strict_word_similarity_dist_commutator_op",
+            "routine_type": "FUNCTION",
+            "data_type": "real",
+            "routine_definition": null
+        },
+        {
+            "routine_name": "strict_word_similarity_dist_op",
+            "routine_type": "FUNCTION",
+            "data_type": "real",
+            "routine_definition": null
+        },
+        {
+            "routine_name": "strict_word_similarity_op",
+            "routine_type": "FUNCTION",
+            "data_type": "boolean",
+            "routine_definition": null
+        },
+        {
+            "routine_name": "sync_user_display_name",
+            "routine_type": "FUNCTION",
+            "data_type": "trigger",
+            "routine_definition": "\nBEGIN\n  UPDATE public.users\n  SET full_name = NEW.raw_user_meta_data->>'full_name'\n  WHERE id = NEW.id;\n  RETURN NEW;\nEND;\n"
+        },
+        {
+            "routine_name": "unlink_insights_from_task",
+            "routine_type": "FUNCTION",
+            "data_type": "jsonb",
+            "routine_definition": "\r\nDECLARE\r\n    v_authorized boolean := false;\r\n    v_task_exists boolean;\r\n    v_authorized_insights uuid[] := '{}';\r\n    v_unauthorized_insights uuid[] := '{}';\r\n    v_insight_id uuid;\r\n    v_result jsonb;\r\nBEGIN\r\n    -- Set current user context\r\n    PERFORM set_config('app.current_user_id', p_user_id::text, true);\r\n    \r\n    -- Check if user has access to the task\r\n    SELECT EXISTS (\r\n        SELECT 1 FROM tasks t\r\n        WHERE t.id = p_task_id AND (\r\n            t.user_id = p_user_id OR \r\n            t.space_id IN (SELECT space_id FROM space_members WHERE user_id = p_user_id) OR\r\n            EXISTS (SELECT 1 FROM space_tasks st JOIN space_members sm ON st.space_id = sm.space_id \r\n                   WHERE st.task_id = t.id AND sm.user_id = p_user_id)\r\n        )\r\n    ) INTO v_task_exists;\r\n    \r\n    IF NOT v_task_exists THEN\r\n        RETURN jsonb_build_object(\r\n            'success', false,\r\n            'message', 'Task not found or you do not have access to it',\r\n            'unlinked_insights', '{}'::uuid[]\r\n        );\r\n    END IF;\r\n    \r\n    -- Check which insights the user has access to\r\n    FOREACH v_insight_id IN ARRAY p_insight_ids\r\n    LOOP\r\n        IF EXISTS (\r\n            SELECT 1 FROM insights i\r\n            WHERE i.id = v_insight_id AND (\r\n                i.user_id = p_user_id OR\r\n                i.space_id IN (SELECT space_id FROM space_members WHERE user_id = p_user_id)\r\n            )\r\n        ) THEN\r\n            v_authorized_insights := array_append(v_authorized_insights, v_insight_id);\r\n        ELSE\r\n            v_unauthorized_insights := array_append(v_unauthorized_insights, v_insight_id);\r\n        END IF;\r\n    END LOOP;\r\n    \r\n    -- Unlink authorized insights from the task\r\n    IF array_length(v_authorized_insights, 1) > 0 THEN\r\n        DELETE FROM insight_task\r\n        WHERE task_id = p_task_id\r\n        AND insight_id = ANY(v_authorized_insights);\r\n    END IF;\r\n    \r\n    -- Build result\r\n    v_result := jsonb_build_object(\r\n        'success', COALESCE(array_length(v_authorized_insights, 1) > 0, false),\r\n        'unlinked_insights', v_authorized_insights,\r\n        'message', CASE \r\n            WHEN array_length(v_unauthorized_insights, 1) > 0 \r\n            THEN 'Some insights could not be unlinked due to insufficient permissions'\r\n            ELSE 'All insights unlinked successfully'\r\n        END\r\n    );\r\n    \r\n    -- Add unauthorized insights to result if any\r\n    IF array_length(v_unauthorized_insights, 1) > 0 THEN\r\n        v_result := v_result || jsonb_build_object('unauthorized_insights', v_unauthorized_insights);\r\n    END IF;\r\n    \r\n    RETURN v_result;\r\nEND;\r\n"
+        },
+        {
+            "routine_name": "unlink_tasks_from_insight",
+            "routine_type": "FUNCTION",
+            "data_type": "jsonb",
+            "routine_definition": "\r\nDECLARE\r\n    v_insight_exists boolean;\r\n    v_authorized_tasks uuid[] := '{}';\r\n    v_unauthorized_tasks uuid[] := '{}';\r\n    v_task_id uuid;\r\n    v_result jsonb;\r\nBEGIN\r\n    -- Set current user context\r\n    PERFORM set_config('app.current_user_id', p_user_id::text, true);\r\n    \r\n    -- Check if user has access to the insight\r\n    SELECT EXISTS (\r\n        SELECT 1 FROM insights i\r\n        WHERE i.id = p_insight_id AND (\r\n            i.user_id = p_user_id OR\r\n            i.space_id IN (SELECT space_id FROM space_members WHERE user_id = p_user_id)\r\n        )\r\n    ) INTO v_insight_exists;\r\n    \r\n    IF NOT v_insight_exists THEN\r\n        RETURN jsonb_build_object(\r\n            'success', false,\r\n            'message', 'Insight not found or you do not have access to it',\r\n            'unlinked_tasks', '{}'::uuid[]\r\n        );\r\n    END IF;\r\n    \r\n    -- Check which tasks the user has access to\r\n    FOREACH v_task_id IN ARRAY p_task_ids\r\n    LOOP\r\n        IF EXISTS (\r\n            SELECT 1 FROM tasks t\r\n            WHERE t.id = v_task_id AND (\r\n                t.user_id = p_user_id OR \r\n                t.space_id IN (SELECT space_id FROM space_members WHERE user_id = p_user_id) OR\r\n                EXISTS (SELECT 1 FROM space_tasks st JOIN space_members sm ON st.space_id = sm.space_id \r\n                       WHERE st.task_id = t.id AND sm.user_id = p_user_id)\r\n            )\r\n        ) THEN\r\n            v_authorized_tasks := array_append(v_authorized_tasks, v_task_id);\r\n        ELSE\r\n            v_unauthorized_tasks := array_append(v_unauthorized_tasks, v_task_id);\r\n        END IF;\r\n    END LOOP;\r\n    \r\n    -- Unlink authorized tasks from the insight\r\n    IF array_length(v_authorized_tasks, 1) > 0 THEN\r\n        DELETE FROM insight_task\r\n        WHERE insight_id = p_insight_id\r\n        AND task_id = ANY(v_authorized_tasks);\r\n    END IF;\r\n    \r\n    -- Build result\r\n    v_result := jsonb_build_object(\r\n        'success', COALESCE(array_length(v_authorized_tasks, 1) > 0, false),\r\n        'unlinked_tasks', v_authorized_tasks,\r\n        'message', CASE \r\n            WHEN array_length(v_unauthorized_tasks, 1) > 0 \r\n            THEN 'Some tasks could not be unlinked due to insufficient permissions'\r\n            ELSE 'All tasks unlinked successfully'\r\n        END\r\n    );\r\n    \r\n    -- Add unauthorized tasks to result if any\r\n    IF array_length(v_unauthorized_tasks, 1) > 0 THEN\r\n        v_result := v_result || jsonb_build_object('unauthorized_tasks', v_unauthorized_tasks);\r\n    END IF;\r\n    \r\n    RETURN v_result;\r\nEND;\r\n"
+        },
+        {
+            "routine_name": "update_asana_workspace",
+            "routine_type": "FUNCTION",
+            "data_type": "void",
+            "routine_definition": "DECLARE\r\n  updated_row jsonb;\r\nBEGIN\r\n    UPDATE integrations\r\n    SET data = jsonb_set(\r\n      jsonb_set(\r\n        jsonb_set(\r\n          jsonb_set(\r\n            data,\r\n            '{workspaceId}',\r\n            to_jsonb(p_workspace_id),\r\n            true\r\n          ),\r\n          '{workspaceName}',\r\n          to_jsonb(p_workspace_name),\r\n          true\r\n        ),\r\n        '{projectId}',\r\n        to_jsonb(p_project_id),\r\n        true\r\n      ),\r\n      '{projectName}',\r\n      to_jsonb(p_project_name),\r\n      true\r\n    ),\r\n    updated_at = NOW()\r\n    WHERE user_id = p_user_id AND name = 'Asana';\r\nEND;"
+        },
+        {
+            "routine_name": "update_comment_edited_at",
+            "routine_type": "FUNCTION",
+            "data_type": "trigger",
+            "routine_definition": "\r\nBEGIN\r\n  -- Only update edited_at if content actually changed and it's not a new insert\r\n  IF TG_OP = 'UPDATE' AND OLD.content IS DISTINCT FROM NEW.content THEN\r\n    NEW.edited_at = now();\r\n  END IF;\r\n  \r\n  RETURN NEW;\r\nEND;\r\n"
+        },
+        {
+            "routine_name": "update_gmail_domains",
+            "routine_type": "FUNCTION",
+            "data_type": "void",
+            "routine_definition": "\nBEGIN\n  UPDATE integrations\n  SET data = jsonb_set(\n              jsonb_set(data, '{white_domains}', to_jsonb(whiteDomains)),\n              '{black_domains}', to_jsonb(blackDomains)\n           )  WHERE user_id = userId;\nEND;\n"
+        },
+        {
+            "routine_name": "update_jira_project",
+            "routine_type": "FUNCTION",
+            "data_type": "void",
+            "routine_definition": "\r\nBEGIN\r\n  UPDATE integrations\r\n  SET data = jsonb_set(\r\n    jsonb_set(\r\n      data,\r\n      '{projectKey}',\r\n      to_jsonb(p_project_key)\r\n    ),\r\n    '{projectName}',\r\n    to_jsonb(p_project_name)\r\n  ),\r\n  updated_at = now()\r\n  WHERE user_id = p_user_id AND name = 'Jira';\r\nEND;\r\n"
+        },
+        {
+            "routine_name": "update_linear_team",
+            "routine_type": "FUNCTION",
+            "data_type": "jsonb",
+            "routine_definition": "\nDECLARE\n  updated_row jsonb;\nBEGIN\n  UPDATE integrations\n  SET data = jsonb_set(\n    jsonb_set(\n      data,\n      '{team_id}',\n      to_jsonb(p_team_id),\n      true\n    ),\n    '{team_name}',\n    to_jsonb(p_team_name),\n    true\n  ),\n  updated_at = NOW()\n  WHERE user_id = p_user_id AND name = 'Linear'\n  RETURNING data INTO updated_row;\n  \n  RETURN updated_row;\nEND;\n"
+        },
+        {
+            "routine_name": "update_pending_invites_on_user_creation",
+            "routine_type": "FUNCTION",
+            "data_type": "trigger",
+            "routine_definition": "\r\nBEGIN\r\n  -- Update the pending invitations: set the user_id where email matches\r\n  UPDATE public.space_pending_invitations\r\n  SET user_id = NEW.id\r\n  WHERE user_email = NEW.email\r\n    AND user_id IS NULL; -- Optional: only update if user_id is still NULL\r\n\r\n  RETURN NEW;\r\nEND;\r\n"
+        },
+        {
+            "routine_name": "update_task_assignee_with_user_context",
+            "routine_type": "FUNCTION",
+            "data_type": "jsonb",
+            "routine_definition": "\r\n  DECLARE\r\n    result_task jsonb;\r\n  BEGIN\r\n    -- Set the user context for the changelog trigger\r\n    PERFORM set_config('app.current_user_id', p_user_id::text, true);\r\n\r\n    -- Update the assignee\r\n    UPDATE tasks\r\n    SET\r\n      user_id = p_assignee_id,\r\n      is_sindre_assigned = p_is_sindre_assigned,\r\n      updated_at = now()\r\n    WHERE id = p_task_id\r\n    RETURNING to_jsonb(tasks.*) INTO result_task;\r\n\r\n    RETURN result_task;\r\n  END;\r\n"
+        },
+        {
+            "routine_name": "update_task_bet_with_user_context",
+            "routine_type": "FUNCTION",
+            "data_type": "jsonb",
+            "routine_definition": "\r\n  DECLARE\r\n      result_task jsonb;\r\n      old_bet_id uuid;\r\n      old_bet_name text;\r\n      new_bet_name text;\r\n      old_values jsonb;\r\n      new_values jsonb;\r\n  BEGIN\r\n      PERFORM set_config('app.current_user_id', p_user_id::text, true);\r\n\r\n      -- Get the current bet for this task\r\n      SELECT bt.bet_id INTO old_bet_id\r\n      FROM bet_tasks bt\r\n      WHERE bt.task_id = p_task_id\r\n      LIMIT 1;\r\n\r\n      -- Get bet names for changelog\r\n      IF old_bet_id IS NOT NULL THEN\r\n          SELECT name INTO old_bet_name FROM bets WHERE id = old_bet_id;\r\n      END IF;\r\n\r\n      IF p_bet_id IS NOT NULL THEN\r\n          SELECT name INTO new_bet_name FROM bets WHERE id = p_bet_id;\r\n      END IF;\r\n\r\n      -- Prepare changelog values\r\n      old_values := jsonb_build_object('bet_id', old_bet_id, 'bet_name', old_bet_name);\r\n      new_values := jsonb_build_object('bet_id', p_bet_id, 'bet_name', new_bet_name);\r\n\r\n      -- First, delete any existing bet for this task\r\n      DELETE FROM bet_tasks WHERE task_id = p_task_id;\r\n\r\n      -- Then insert the new bet if p_bet_id is not null\r\n      IF p_bet_id IS NOT NULL THEN\r\n          INSERT INTO bet_tasks (bet_id, task_id) VALUES (p_bet_id, p_task_id);\r\n      END IF;\r\n\r\n      -- Update the task's updated_at timestamp\r\n      UPDATE tasks\r\n      SET updated_at = now()\r\n      WHERE id = p_task_id\r\n      RETURNING to_jsonb(tasks.*) INTO result_task;\r\n\r\n      -- Insert changelog entry\r\n      INSERT INTO tasks_changelog (\r\n          task_id,\r\n          operation_type,\r\n          changed_by,\r\n          old_values,\r\n          new_values,\r\n          changed_fields,\r\n          change_description\r\n      ) VALUES (\r\n          p_task_id,\r\n          'UPDATE',\r\n          p_user_id,\r\n          old_values,\r\n          new_values,\r\n          ARRAY['bet'],\r\n          CASE\r\n              WHEN old_bet_name IS NULL AND new_bet_name IS NOT NULL THEN 'Added bet: ' || new_bet_name\r\n              WHEN old_bet_name IS NOT NULL AND new_bet_name IS NULL THEN 'Removed bet: ' || old_bet_name\r\n              WHEN old_bet_name != new_bet_name THEN 'Changed bet from ' || old_bet_name || ' to ' || new_bet_name\r\n              ELSE 'Updated bet'\r\n          END\r\n      );\r\n\r\n      RETURN result_task;\r\n  END;\r\n"
+        },
+        {
+            "routine_name": "update_task_priority_with_user_context",
+            "routine_type": "FUNCTION",
+            "data_type": "jsonb",
+            "routine_definition": "\r\n  DECLARE\r\n    result_task jsonb;\r\n  BEGIN\r\n    PERFORM set_config('app.current_user_id', p_user_id::text, true);\r\n\r\n    UPDATE tasks\r\n    SET\r\n      priority_id = p_priority_id,\r\n      updated_at = now()\r\n    WHERE id = p_task_id\r\n    RETURNING to_jsonb(tasks.*) INTO result_task;\r\n\r\n    RETURN result_task;\r\n  END;\r\n"
+        },
+        {
+            "routine_name": "update_task_status_with_user_context",
+            "routine_type": "FUNCTION",
+            "data_type": "jsonb",
+            "routine_definition": "\r\n  DECLARE\r\n    result_task jsonb;\r\n  BEGIN\r\n    PERFORM set_config('app.current_user_id', p_user_id::text, true);\r\n\r\n    UPDATE tasks\r\n    SET\r\n      status_id = p_status_id,\r\n      updated_at = now()\r\n    WHERE id = p_task_id\r\n    RETURNING to_jsonb(tasks.*) INTO result_task;\r\n\r\n    RETURN result_task;\r\n  END;\r\n"
+        },
+        {
+            "routine_name": "update_task_with_user_context",
+            "routine_type": "FUNCTION",
+            "data_type": "jsonb",
+            "routine_definition": "\r\n  DECLARE\r\n    result_task jsonb;\r\n  BEGIN\r\n    -- Set the user context for the changelog trigger\r\n    PERFORM set_config('app.current_user_id', p_user_id::text, true);\r\n\r\n    -- Perform the update\r\n    UPDATE tasks\r\n    SET\r\n      name = COALESCE((p_updates->>'name')::text, name),\r\n      description = COALESCE((p_updates->>'description')::text, description),\r\n      status_id = COALESCE((p_updates->>'status_id')::integer, status_id),\r\n      priority_id = COALESCE((p_updates->>'priority_id')::integer, priority_id),\r\n      user_id = CASE\r\n        WHEN p_updates ? 'user_id' THEN (p_updates->>'user_id')::uuid\r\n        ELSE user_id\r\n      END,\r\n      is_sindre_assigned = COALESCE((p_updates->>'is_sindre_assigned')::boolean, is_sindre_assigned),\r\n      updated_at = now()\r\n    WHERE id = p_task_id\r\n    RETURNING to_jsonb(tasks.*) INTO result_task;\r\n\r\n    RETURN result_task;\r\n  END;\r\n"
+        },
+        {
+            "routine_name": "word_similarity",
+            "routine_type": "FUNCTION",
+            "data_type": "real",
+            "routine_definition": null
+        },
+        {
+            "routine_name": "word_similarity_commutator_op",
+            "routine_type": "FUNCTION",
+            "data_type": "boolean",
+            "routine_definition": null
+        },
+        {
+            "routine_name": "word_similarity_dist_commutator_op",
+            "routine_type": "FUNCTION",
+            "data_type": "real",
+            "routine_definition": null
+        },
+        {
+            "routine_name": "word_similarity_dist_op",
+            "routine_type": "FUNCTION",
+            "data_type": "real",
+            "routine_definition": null
+        },
+        {
+            "routine_name": "word_similarity_op",
+            "routine_type": "FUNCTION",
+            "data_type": "boolean",
+            "routine_definition": null
+        }
+    ]
+}

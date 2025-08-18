@@ -1,0 +1,850 @@
+---
+title: "Bets"
+description: "API endpoints for managing bets and tracking initiatives"
+---
+
+# Bets API
+
+The Bets API enables users to create and manage strategic bets within their spaces or personal workspaces. Bets represent initiatives with target dates and assignable owners.
+
+## Bet Object
+
+A bet represents an initiative with basic tracking information:
+
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "name": "Increase user engagement by 40%",
+  "description": "Implement new onboarding flow and gamification elements to boost daily active users",
+  "status_id": 1,
+  "priority_id": 2,
+  "icon_id": 1,
+  "target_date": "2024-06-30T23:59:59Z",
+  "owner_id": "user-uuid-here",
+  "created_at": "2024-01-01T00:00:00Z",
+  "status": {
+    "id": 1,
+    "name": "active",
+    "description": "Bet is actively being worked on"
+  },
+  "icon": {
+    "id": 1,
+    "name": "target"
+  },
+  "owner": {
+    "id": "user-uuid-here",
+    "email": "sarah@company.com",
+    "full_name": "Sarah Johnson"
+  },
+  "space": [
+    {
+      "space_id": "space-uuid-here"
+    }
+  ]
+}
+```
+
+### Status and Priority
+
+Bet status and priority are managed through lookup tables with numeric IDs. Use the `/api/bets/statuses` endpoint to retrieve available status options. Priority levels are defined in the `bets_priorities` table.
+
+### Field Descriptions
+
+<ParamField name="name" type="string" required>
+  The name/title of the bet
+</ParamField>
+
+<ParamField name="description" type="string">
+  Detailed description of the bet
+</ParamField>
+
+<ParamField name="status_id" type="integer" required>
+  Reference to the bet status (defaults to 1)
+</ParamField>
+
+<ParamField name="priority_id" type="integer" required>
+  Reference to the bet priority (defaults to 1)
+</ParamField>
+
+<ParamField name="icon_id" type="integer" required>
+  Reference to the bet icon (defaults to 1)
+</ParamField>
+
+<ParamField name="target_date" type="string" required>
+  Target completion date in ISO 8601 format
+</ParamField>
+
+<ParamField name="owner_id" type="string">
+  UUID of the user who owns this bet
+</ParamField>
+
+## Create Bet
+
+Create a new bet. If `ownBet` is true, the current user will be set as the owner.
+
+<CodeGroup>
+
+```javascript POST /api/bets
+const bet = await fetch('/api/bets', {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    name: 'Increase user engagement by 40%',
+    description: 'Implement new onboarding flow and gamification elements',
+    target_date: '2024-06-30T23:59:59Z',
+    status_id: 1,
+    priority_id: 2,
+    icon_id: 1,
+    owner_id: 'user-uuid-here',
+    ownBet: true,
+    space_id: 'space-uuid-here'
+  })
+});
+
+const betData = await bet.json();
+```
+
+```python
+import requests
+
+response = requests.post(
+    '/api/bets',
+    headers={
+        'Authorization': f'Bearer {token}',
+        'Content-Type': 'application/json'
+    },
+    json={
+        'name': 'Increase user engagement by 40%',
+        'description': 'Implement new onboarding flow and gamification elements',
+        'target_date': '2024-06-30T23:59:59Z',
+        'status_id': 1,
+        'priority_id': 2,
+        'icon_id': 1,
+        'ownBet': True,
+        'space_id': 'space-uuid-here'
+    }
+)
+
+bet = response.json()
+```
+
+```bash
+curl -X POST /api/bets \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Increase user engagement by 40%",
+    "description": "Implement new onboarding flow and gamification elements",
+    "target_date": "2024-06-30T23:59:59Z",
+    "status_id": 1,
+    "priority_id": 2,
+    "icon_id": 1,
+    "ownBet": true,
+    "space_id": "space-uuid-here"
+  }'
+```
+
+</CodeGroup>
+
+### Request Body
+
+<ParamField body="name" type="string" required>
+  Name of the bet
+</ParamField>
+
+<ParamField body="description" type="string">
+  Detailed description of the bet
+</ParamField>
+
+<ParamField body="target_date" type="string" required>
+  Target completion date (ISO 8601 format)
+</ParamField>
+
+<ParamField body="status_id" type="integer">
+  Status ID (defaults to 1)
+</ParamField>
+
+<ParamField body="priority_id" type="integer">
+  Priority ID (defaults to 1)
+</ParamField>
+
+<ParamField body="icon_id" type="integer">
+  Icon ID (defaults to 1)
+</ParamField>
+
+<ParamField body="owner_id" type="string">
+  User ID of the bet owner
+</ParamField>
+
+<ParamField body="ownBet" type="boolean">
+  If true, sets the current user as the owner
+</ParamField>
+
+<ParamField body="space_id" type="string">
+  Space ID to associate the bet with
+</ParamField>
+
+### Response
+
+Returns the created bet object with status `200 OK`.
+
+## Get Bets by IDs
+
+Retrieve specific bets by providing their IDs in the request body.
+
+<CodeGroup>
+
+```javascript GET /api/bets
+const response = await fetch('/api/bets', {
+  method: 'GET',
+  headers: {
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    betIds: ['bet-id-1', 'bet-id-2', 'bet-id-3']
+  })
+});
+
+const bets = await response.json();
+```
+
+```python
+response = requests.get(
+    '/api/bets',
+    headers={
+        'Authorization': f'Bearer {token}',
+        'Content-Type': 'application/json'
+    },
+    json={
+        'betIds': ['bet-id-1', 'bet-id-2', 'bet-id-3']
+    }
+)
+
+bets = response.json()
+```
+
+```bash
+curl -X GET /api/bets \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "betIds": ["bet-id-1", "bet-id-2", "bet-id-3"]
+  }'
+```
+
+</CodeGroup>
+
+### Request Body
+
+<ParamField body="betIds" type="array" required>
+  Array of bet IDs to retrieve
+</ParamField>
+
+### Response
+
+Returns an array of bet objects.
+
+## Get User Bets
+
+Retrieve all bets associated with the current user.
+
+<CodeGroup>
+
+```javascript GET /api/bets/user
+const response = await fetch('/api/bets/user', {
+  method: 'GET',
+  headers: {
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json'
+  }
+});
+
+const bets = await response.json();
+```
+
+```python
+response = requests.get(
+    '/api/bets/user',
+    headers={
+        'Authorization': f'Bearer {token}',
+        'Content-Type': 'application/json'
+    }
+)
+
+bets = response.json()
+```
+
+```bash
+curl -X GET /api/bets/user \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json"
+```
+
+</CodeGroup>
+
+### Response
+
+Returns an array of bet objects associated with the current user.
+
+## Get Space Bets
+
+Retrieve all bets associated with a specific space.
+
+<CodeGroup>
+
+```javascript GET /api/bets/space/:spaceId
+const response = await fetch(`/api/bets/space/${spaceId}`, {
+  method: 'GET',
+  headers: {
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json'
+  }
+});
+
+const bets = await response.json();
+```
+
+```python
+response = requests.get(
+    f'/api/bets/space/{space_id}',
+    headers={
+        'Authorization': f'Bearer {token}',
+        'Content-Type': 'application/json'
+    }
+)
+
+bets = response.json()
+```
+
+```bash
+curl -X GET /api/bets/space/space-uuid-here \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json"
+```
+
+</CodeGroup>
+
+### Path Parameters
+
+<ParamField path="spaceId" type="string" required>
+  The space ID to retrieve bets for
+</ParamField>
+
+### Response
+
+Returns an array of bet objects associated with the specified space.
+
+## Get Bet
+
+Retrieve a specific bet by its ID.
+
+<CodeGroup>
+
+```javascript GET /api/bets/:betId
+const response = await fetch(`/api/bets/${betId}`, {
+  method: 'GET',
+  headers: {
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json'
+  }
+});
+
+const bet = await response.json();
+```
+
+```python
+response = requests.get(
+    f'/api/bets/{bet_id}',
+    headers={
+        'Authorization': f'Bearer {token}',
+        'Content-Type': 'application/json'
+    }
+)
+
+bet = response.json()
+```
+
+```bash
+curl -X GET /api/bets/550e8400-e29b-41d4-a716-446655440000 \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json"
+```
+
+</CodeGroup>
+
+### Path Parameters
+
+<ParamField path="betId" type="string" required>
+  The bet ID to retrieve
+</ParamField>
+
+### Response
+
+Returns the complete bet object.
+
+## Update Bet
+
+Update bet properties.
+
+<CodeGroup>
+
+```javascript PUT /api/bets/:betId
+const response = await fetch(`/api/bets/${betId}`, {
+  method: 'PUT',
+  headers: {
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    name: 'Updated bet name',
+    description: 'Updated description',
+    target_date: '2024-12-31T23:59:59Z',
+    status_id: 2,
+    priority_id: 3,
+    icon_id: 2,
+    owner_id: 'new-owner-uuid'
+  })
+});
+
+const updatedBet = await response.json();
+```
+
+```python
+response = requests.put(
+    f'/api/bets/{bet_id}',
+    headers={
+        'Authorization': f'Bearer {token}',
+        'Content-Type': 'application/json'
+    },
+    json={
+        'name': 'Updated bet name',
+        'description': 'Updated description',
+        'target_date': '2024-12-31T23:59:59Z',
+        'status_id': 2,
+        'priority_id': 3
+    }
+)
+
+bet = response.json()
+```
+
+```bash
+curl -X PUT /api/bets/550e8400-e29b-41d4-a716-446655440000 \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Updated bet name",
+    "description": "Updated description",
+    "target_date": "2024-12-31T23:59:59Z",
+    "status_id": 2
+  }'
+```
+
+</CodeGroup>
+
+### Path Parameters
+
+<ParamField path="betId" type="string" required>
+  The bet ID to update
+</ParamField>
+
+### Request Body
+
+<ParamField body="name" type="string">
+  Updated bet name
+</ParamField>
+
+<ParamField body="description" type="string">
+  Updated description
+</ParamField>
+
+<ParamField body="status_id" type="integer">
+  Updated status ID
+</ParamField>
+
+<ParamField body="priority_id" type="integer">
+  Updated priority ID
+</ParamField>
+
+<ParamField body="icon_id" type="integer">
+  Updated icon ID
+</ParamField>
+
+<ParamField body="target_date" type="string">
+  Updated target date (ISO 8601)
+</ParamField>
+
+<ParamField body="owner_id" type="string">
+  Updated owner ID
+</ParamField>
+
+### Response
+
+Returns the updated bet object with status `200 OK`.
+
+## Update Bet Status
+
+Update the status of a specific bet.
+
+<CodeGroup>
+
+```javascript PATCH /api/bets/:betId/status/:statusId
+const response = await fetch(`/api/bets/${betId}/status/${statusId}`, {
+  method: 'PATCH',
+  headers: {
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json'
+  }
+});
+
+const updatedBet = await response.json();
+```
+
+```python
+response = requests.patch(
+    f'/api/bets/{bet_id}/status/{status_id}',
+    headers={
+        'Authorization': f'Bearer {token}',
+        'Content-Type': 'application/json'
+    }
+)
+
+bet = response.json()
+```
+
+```bash
+curl -X PATCH /api/bets/bet-id-here/status/2 \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json"
+```
+
+</CodeGroup>
+
+### Path Parameters
+
+<ParamField path="betId" type="string" required>
+  The bet ID to update
+</ParamField>
+
+<ParamField path="statusId" type="string" required>
+  The new status ID
+</ParamField>
+
+## Update Bet Owner
+
+Update the owner of a specific bet.
+
+<CodeGroup>
+
+```javascript PATCH /api/bets/:betId/owner/:ownerId
+const response = await fetch(`/api/bets/${betId}/owner/${ownerId}`, {
+  method: 'PATCH',
+  headers: {
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json'
+  }
+});
+
+const updatedBet = await response.json();
+```
+
+```python
+response = requests.patch(
+    f'/api/bets/{bet_id}/owner/{owner_id}',
+    headers={
+        'Authorization': f'Bearer {token}',
+        'Content-Type': 'application/json'
+    }
+)
+
+bet = response.json()
+```
+
+```bash
+curl -X PATCH /api/bets/bet-id-here/owner/user-id-here \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json"
+```
+
+</CodeGroup>
+
+### Path Parameters
+
+<ParamField path="betId" type="string" required>
+  The bet ID to update
+</ParamField>
+
+<ParamField path="ownerId" type="string" required>
+  The new owner user ID (use "null" to remove owner)
+</ParamField>
+
+## Mark Bet as Done
+
+Quickly mark a bet as completed by setting its status to "completed".
+
+<CodeGroup>
+
+```javascript PATCH /api/bets/:betId/done
+const response = await fetch(`/api/bets/${betId}/done`, {
+  method: 'PATCH',
+  headers: {
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json'
+  }
+});
+
+const updatedBet = await response.json();
+```
+
+```python
+response = requests.patch(
+    f'/api/bets/{bet_id}/done',
+    headers={
+        'Authorization': f'Bearer {token}',
+        'Content-Type': 'application/json'
+    }
+)
+
+bet = response.json()
+```
+
+```bash
+curl -X PATCH /api/bets/bet-id-here/done \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json"
+```
+
+</CodeGroup>
+
+### Path Parameters
+
+<ParamField path="betId" type="string" required>
+  The bet ID to mark as done
+</ParamField>
+
+## Get Available Statuses
+
+Retrieve all available bet statuses.
+
+<CodeGroup>
+
+```javascript GET /api/bets/statuses
+const response = await fetch('/api/bets/statuses', {
+  method: 'GET',
+  headers: {
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json'
+  }
+});
+
+const statuses = await response.json();
+```
+
+```python
+response = requests.get(
+    '/api/bets/statuses',
+    headers={
+        'Authorization': f'Bearer {token}',
+        'Content-Type': 'application/json'
+    }
+)
+
+statuses = response.json()
+```
+
+```bash
+curl -X GET /api/bets/statuses \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json"
+```
+
+</CodeGroup>
+
+### Response
+
+```json
+[
+  {
+    "id": 1,
+    "name": "active",
+    "description": "Bet is actively being worked on"
+  },
+  {
+    "id": 2,
+    "name": "completed",
+    "description": "Bet has been completed"
+  }
+]
+```
+
+## Delete Bet
+
+Permanently delete a bet. This action cannot be undone.
+
+<CodeGroup>
+
+```javascript DELETE /api/bets/:betId
+const response = await fetch(`/api/bets/${betId}`, {
+  method: 'DELETE',
+  headers: {
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json'
+  }
+});
+
+const result = await response.json();
+```
+
+```python
+response = requests.delete(
+    f'/api/bets/{bet_id}',
+    headers={
+        'Authorization': f'Bearer {token}',
+        'Content-Type': 'application/json'
+    }
+)
+
+result = response.json()
+```
+
+```bash
+curl -X DELETE /api/bets/550e8400-e29b-41d4-a716-446655440000 \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json"
+```
+
+</CodeGroup>
+
+### Path Parameters
+
+<ParamField path="betId" type="string" required>
+  The bet ID to delete
+</ParamField>
+
+### Response
+
+Returns `true` on successful deletion with status `200 OK`.
+
+<Warning>
+  **Permanent deletion**: This action cannot be undone. The bet will be permanently removed.
+</Warning>
+
+## Delete Multiple Bets
+
+Delete multiple bets at once.
+
+<CodeGroup>
+
+```javascript DELETE /api/bets
+const response = await fetch('/api/bets', {
+  method: 'DELETE',
+  headers: {
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    betIds: ['bet-id-1', 'bet-id-2', 'bet-id-3']
+  })
+});
+
+const result = await response.json();
+```
+
+```python
+response = requests.delete(
+    '/api/bets',
+    headers={
+        'Authorization': f'Bearer {token}',
+        'Content-Type': 'application/json'
+    },
+    json={
+        'betIds': ['bet-id-1', 'bet-id-2', 'bet-id-3']
+    }
+)
+
+result = response.json()
+```
+
+```bash
+curl -X DELETE /api/bets \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "betIds": ["bet-id-1", "bet-id-2", "bet-id-3"]
+  }'
+```
+
+</CodeGroup>
+
+### Request Body
+
+<ParamField body="betIds" type="array" required>
+  Array of bet IDs to delete
+</ParamField>
+
+### Response
+
+Returns the array of deleted bet objects with status `200 OK`.
+
+
+## Error Responses
+
+The Bets API returns standard HTTP error codes with JSON error messages.
+
+### 400 Bad Request
+
+```json
+{
+  "error": "Bet is required"
+}
+```
+
+```json
+{
+  "error": "Bet IDs are required"
+}
+```
+
+### 404 Not Found
+
+```json
+{
+  "error": "Bet not found"
+}
+```
+
+```json
+{
+  "error": "No bets found for this user"
+}
+```
+
+```json
+{
+  "error": "No bets found for this space"
+}
+```
+
+### 500 Internal Server Error
+
+```json
+{
+  "error": "Failed to create bet"
+}
+```
+
+```json
+{
+  "error": "Failed to update bet"
+}
+```
+
+```json
+{
+  "error": "Failed to delete bet"
+}
+```

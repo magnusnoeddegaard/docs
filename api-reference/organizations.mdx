@@ -1,0 +1,736 @@
+---
+title: "Organization Management"
+description: "API endpoints for managing organizations, companies, and external entities"
+---
+
+# Organization Management API
+
+The Organization Management API provides comprehensive organization lifecycle management, including creating and managing companies, clients, partners, and other external entities that your team collaborates with.
+
+## API Endpoints Overview
+
+<CardGroup cols={2}>
+  <Card title="Core Organization Operations" icon="building">
+    - `POST /api/organizations` - Create organization
+    - `GET /api/organizations/:id` - Get organization details
+    - `PUT /api/organizations/:id` - Update organization
+    - `DELETE /api/organizations/:id` - Delete organization
+  </Card>
+  <Card title="Organization Retrieval" icon="search">
+    - `GET /api/organizations` - List all organizations
+    - `GET /api/organizations/types` - Get organization types
+    - `GET /api/organizations/:id/people` - Get organization people
+  </Card>
+  <Card title="Organization Types" icon="tags">
+    - Company - Business organizations
+    - Client - Customer organizations  
+    - Partner - Strategic partners
+    - Vendor - Service providers
+  </Card>
+  <Card title="Integration Features" icon="link">
+    - Space-based access control
+    - People relationship management
+    - Source tracking and attribution
+    - Domain-based organization matching
+  </Card>
+</CardGroup>
+
+## Organization Object
+
+The organization object represents a company, client, partner, or other external entity:
+
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "name": "Acme Corporation",
+  "type_id": 1,
+  "type": {
+    "id": 1,
+    "name": "Company",
+    "description": "Standard business organization"
+  },
+  "domain": "acme.com",
+  "source": {
+    "platform": "meeting_extraction",
+    "meeting_id": "meeting-123",
+    "extracted_at": "2024-01-15T10:30:00Z"
+  },
+  "space_id": "space-uuid-here",
+  "user_id": "user-uuid-here",
+  "created_at": "2024-01-15T10:30:00Z",
+  "people_count": 5,
+  "recent_meetings": [
+    {
+      "id": "meeting-123",
+      "title": "Quarterly Review",
+      "date": "2024-01-15T14:00:00Z"
+    }
+  ]
+}
+```
+
+## Organization Types
+
+Organization types help categorize different entities you work with:
+
+<AccordionGroup>
+  <Accordion icon="building" title="Company">
+    Standard business organizations and corporations
+  </Accordion>
+  <Accordion icon="handshake" title="Client">
+    Customer organizations that purchase your products or services
+  </Accordion>
+  <Accordion icon="users" title="Partner">
+    Strategic partners and collaborators
+  </Accordion>
+  <Accordion icon="truck" title="Vendor">
+    Service providers and suppliers
+  </Accordion>
+  <Accordion icon="graduation-cap" title="Educational">
+    Schools, universities, and educational institutions
+  </Accordion>
+  <Accordion icon="heart" title="Non-profit">
+    Non-profit organizations and charities
+  </Accordion>
+</AccordionGroup>
+
+## List Organizations
+
+Retrieve all organizations that the authenticated user has access to within their spaces.
+
+<CodeGroup>
+
+```javascript GET /api/organizations
+const response = await fetch('https://api.sindre.com/api/organizations', {
+  method: 'GET',
+  headers: {
+    'Authorization': `Bearer ${SINDRE_API_KEY}`,
+    'Content-Type': 'application/json'
+  }
+});
+
+const organizations = await response.json();
+```
+
+```python
+response = requests.get(
+    'https://api.sindre.com/api/organizations',
+    headers={
+        'Authorization': f'Bearer {SINDRE_API_KEY}',
+        'Content-Type': 'application/json'
+    }
+)
+
+organizations = response.json()
+```
+
+```bash
+curl -X GET https://api.sindre.com/api/organizations \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json"
+```
+
+</CodeGroup>
+
+### Response
+
+Returns an array of organization objects with their associated types, sorted by creation date (newest first).
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440000",
+      "name": "Acme Corporation",
+      "type": {
+        "id": 1,
+        "name": "Company",
+        "description": "Standard business organization"
+      },
+      "domain": "acme.com",
+      "created_at": "2024-01-15T10:30:00Z"
+    }
+  ]
+}
+```
+
+## Get Organization
+
+Retrieve a specific organization by its ID with complete details and relationships.
+
+<CodeGroup>
+
+```javascript GET /api/organizations/:id
+const response = await fetch(`https://api.sindre.com/api/organizations/${organizationId}`, {
+  method: 'GET',
+  headers: {
+    'Authorization': `Bearer ${SINDRE_API_KEY}`,
+    'Content-Type': 'application/json'
+  }
+});
+
+const organization = await response.json();
+```
+
+```python
+response = requests.get(
+    f'https://api.sindre.com/api/organizations/{organization_id}',
+    headers={
+        'Authorization': f'Bearer {SINDRE_API_KEY}',
+        'Content-Type': 'application/json'
+    }
+)
+
+organization = response.json()
+```
+
+```bash
+curl -X GET https://api.sindre.com/api/organizations/550e8400-e29b-41d4-a716-446655440000 \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json"
+```
+
+</CodeGroup>
+
+### Path Parameters
+
+<ParamField path="id" type="string" required>
+  The organization ID to retrieve
+</ParamField>
+
+### Response
+
+Returns the complete organization object with all related information.
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "name": "Acme Corporation",
+    "type_id": 1,
+    "domain": "acme.com",
+    "source": {
+      "platform": "meeting_extraction",
+      "meeting_id": "meeting-123"
+    },
+    "space_id": "space-uuid-here",
+    "user_id": "user-uuid-here",
+    "created_at": "2024-01-15T10:30:00Z"
+  }
+}
+```
+
+## Create Organization
+
+Create a new organization manually or through automated extraction from meetings.
+
+<CodeGroup>
+
+```javascript POST /api/organizations
+const organization = await fetch('https://api.sindre.com/api/organizations', {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${SINDRE_API_KEY}`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    name: 'Acme Corporation',
+    type_id: 1,
+    domain: 'acme.com',
+    source: {
+      platform: 'manual',
+      created_by: 'user'
+    }
+  })
+});
+
+const organizationData = await organization.json();
+```
+
+```python
+import requests
+
+response = requests.post(
+    'https://api.sindre.com/api/organizations',
+    headers={
+        'Authorization': f'Bearer {SINDRE_API_KEY}',
+        'Content-Type': 'application/json'
+    },
+    json={
+        'name': 'Acme Corporation',
+        'type_id': 1,
+        'domain': 'acme.com',
+        'source': {
+            'platform': 'manual',
+            'created_by': 'user'
+        }
+    }
+)
+
+organization = response.json()
+```
+
+```bash
+curl -X POST https://api.sindre.com/api/organizations \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Acme Corporation",
+    "type_id": 1,
+    "domain": "acme.com",
+    "source": {
+      "platform": "manual",
+      "created_by": "user"
+    }
+  }'
+```
+
+</CodeGroup>
+
+### Request Body
+
+<ParamField body="name" type="string" required>
+  Organization name (company, client, partner, etc.)
+</ParamField>
+
+<ParamField body="type_id" type="integer" default="1">
+  Organization type ID: 1=Company, 2=Client, 3=Partner, 4=Vendor, etc.
+</ParamField>
+
+<ParamField body="domain" type="string">
+  Organization's primary domain (e.g., "acme.com")
+</ParamField>
+
+<ParamField body="source" type="object">
+  Source information tracking where this organization was discovered
+  ```json
+  {
+    "platform": "meeting_extraction|manual|import",
+    "meeting_id": "uuid",
+    "extracted_at": "2024-01-15T10:30:00Z"
+  }
+  ```
+</ParamField>
+
+### Response
+
+Returns the created organization object with status `201 Created`.
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "name": "Acme Corporation",
+    "type": {
+      "id": 1,
+      "name": "Company"
+    },
+    "domain": "acme.com",
+    "created_at": "2024-01-15T10:30:00Z"
+  }
+}
+```
+
+## Update Organization
+
+Update an existing organization's details.
+
+<CodeGroup>
+
+```javascript PUT /api/organizations/:id
+const response = await fetch(`https://api.sindre.com/api/organizations/${organizationId}`, {
+  method: 'PUT',
+  headers: {
+    'Authorization': `Bearer ${SINDRE_API_KEY}`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    name: 'Acme Corporation Inc.',
+    type_id: 2,
+    domain: 'acme-corp.com'
+  })
+});
+
+const updatedOrganization = await response.json();
+```
+
+```python
+response = requests.put(
+    f'https://api.sindre.com/api/organizations/{organization_id}',
+    headers={
+        'Authorization': f'Bearer {SINDRE_API_KEY}',
+        'Content-Type': 'application/json'
+    },
+    json={
+        'name': 'Acme Corporation Inc.',
+        'type_id': 2,
+        'domain': 'acme-corp.com'
+    }
+)
+
+organization = response.json()
+```
+
+```bash
+curl -X PUT https://api.sindre.com/api/organizations/550e8400-e29b-41d4-a716-446655440000 \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Acme Corporation Inc.",
+    "type_id": 2,
+    "domain": "acme-corp.com"
+  }'
+```
+
+</CodeGroup>
+
+### Request Body
+
+<ParamField body="name" type="string">
+  Updated organization name
+</ParamField>
+
+<ParamField body="type_id" type="integer">
+  Updated organization type ID
+</ParamField>
+
+<ParamField body="domain" type="string">
+  Updated domain name
+</ParamField>
+
+<ParamField body="source" type="object">
+  Updated source tracking information
+</ParamField>
+
+### Response
+
+Returns the updated organization object with status `200 OK`.
+
+## Delete Organization
+
+Permanently delete an organization. This action cannot be undone.
+
+<CodeGroup>
+
+```javascript DELETE /api/organizations/:id
+const response = await fetch(`https://api.sindre.com/api/organizations/${organizationId}`, {
+  method: 'DELETE',
+  headers: {
+    'Authorization': `Bearer ${SINDRE_API_KEY}`,
+    'Content-Type': 'application/json'
+  }
+});
+
+const result = await response.json();
+```
+
+```python
+response = requests.delete(
+    f'https://api.sindre.com/api/organizations/{organization_id}',
+    headers={
+        'Authorization': f'Bearer {SINDRE_API_KEY}',
+        'Content-Type': 'application/json'
+    }
+)
+
+result = response.json()
+```
+
+```bash
+curl -X DELETE https://api.sindre.com/api/organizations/550e8400-e29b-41d4-a716-446655440000 \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json"
+```
+
+</CodeGroup>
+
+<Warning>
+  **Permanent deletion**: This action cannot be undone. The organization and all associated relationships will be permanently removed from the database.
+</Warning>
+
+### Response
+
+Returns success confirmation with the deleted organization data.
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440000",
+      "name": "Deleted Organization"
+    }
+  ]
+}
+```
+
+## Get Organization Types
+
+Retrieve all available organization types for categorization.
+
+<CodeGroup>
+
+```javascript GET /api/organizations/types
+const response = await fetch('https://api.sindre.com/api/organizations/types', {
+  method: 'GET',
+  headers: {
+    'Authorization': `Bearer ${SINDRE_API_KEY}`,
+    'Content-Type': 'application/json'
+  }
+});
+
+const types = await response.json();
+```
+
+```python
+response = requests.get(
+    'https://api.sindre.com/api/organizations/types',
+    headers={
+        'Authorization': f'Bearer {SINDRE_API_KEY}',
+        'Content-Type': 'application/json'
+    }
+)
+
+types = response.json()
+```
+
+```bash
+curl -X GET https://api.sindre.com/api/organizations/types \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json"
+```
+
+</CodeGroup>
+
+### Response
+
+Returns an array of all available organization types.
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "name": "Company",
+      "description": "Standard business organization"
+    },
+    {
+      "id": 2,
+      "name": "Client", 
+      "description": "Customer organization"
+    },
+    {
+      "id": 3,
+      "name": "Partner",
+      "description": "Strategic partner or collaborator"
+    },
+    {
+      "id": 4,
+      "name": "Vendor",
+      "description": "Service provider or supplier"
+    }
+  ]
+}
+```
+
+## Get Organization People
+
+Retrieve all people associated with a specific organization.
+
+<CodeGroup>
+
+```javascript GET /api/organizations/:id/people
+const response = await fetch(`https://api.sindre.com/api/organizations/${organizationId}/people`, {
+  method: 'GET',
+  headers: {
+    'Authorization': `Bearer ${SINDRE_API_KEY}`,
+    'Content-Type': 'application/json'
+  }
+});
+
+const people = await response.json();
+```
+
+```python
+response = requests.get(
+    f'https://api.sindre.com/api/organizations/{organization_id}/people',
+    headers={
+        'Authorization': f'Bearer {SINDRE_API_KEY}',
+        'Content-Type': 'application/json'
+    }
+)
+
+people = response.json()
+```
+
+```bash
+curl -X GET https://api.sindre.com/api/organizations/550e8400-e29b-41d4-a716-446655440000/people \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json"
+```
+
+</CodeGroup>
+
+### Path Parameters
+
+<ParamField path="id" type="string" required>
+  The organization ID to retrieve people for
+</ParamField>
+
+### Response
+
+Returns an array of people objects associated with the organization.
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "person-uuid-1",
+      "full_name": "John Smith",
+      "email": "john@acme.com",
+      "title": "CEO",
+      "phone_number": "+1-555-123-4567",
+      "created_at": "2024-01-10T09:00:00Z"
+    },
+    {
+      "id": "person-uuid-2",
+      "full_name": "Jane Johnson", 
+      "email": "jane@acme.com",
+      "title": "CTO",
+      "phone_number": "+1-555-123-4568",
+      "created_at": "2024-01-12T11:30:00Z"
+    }
+  ]
+}
+```
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion icon="warning" title="400 Bad Request">
+    ```json
+    {
+      "success": false,
+      "message": "Failed to create organisation",
+      "error": "Invalid organizationData: must be an non-empty object."
+    }
+    ```
+    
+    ```json
+    {
+      "success": false,
+      "message": "Failed to update organisation",
+      "error": "Invalid organizationId: must be a non-empty string."
+    }
+    ```
+    
+    ```json
+    {
+      "success": false,
+      "message": "Failed to update organisation", 
+      "error": "Invalid updates: must be an non-empty object."
+    }
+    ```
+  </Accordion>
+  <Accordion icon="search" title="404 Not Found">
+    ```json
+    {
+      "success": false,
+      "message": "Failed to fetch organisation by ID",
+      "error": "Organization not found"
+    }
+    ```
+    
+    ```json
+    {
+      "success": false,
+      "message": "Failed to delete organisation",
+      "error": "Organization not found"
+    }
+    ```
+  </Accordion>
+  <Accordion icon="lock" title="403 Forbidden">
+    ```json
+    {
+      "success": false,
+      "message": "Failed to create organisation",
+      "error": "Invalid Supabase user session"
+    }
+    ```
+    
+    ```json
+    {
+      "success": false,
+      "message": "Failed to fetch people by organisation ID",
+      "error": "Organization not found or access denied"
+    }
+    ```
+  </Accordion>
+  <Accordion icon="server" title="500 Internal Server Error">
+    ```json
+    {
+      "success": false,
+      "message": "Failed to fetch organisations",
+      "error": "User not found"
+    }
+    ```
+    
+    ```json
+    {
+      "success": false,
+      "message": "Failed to fetch organisation types",
+      "error": "Database connection error"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Best Practices
+
+<Tabs>
+  <Tab title="Organization Creation">
+    - Use clear, consistent naming conventions for organizations
+    - Set appropriate organization types for better categorization  
+    - Include domain information when available for automatic matching
+    - Track source information for attribution and deduplication
+    - Verify organization doesn't already exist before creating
+  </Tab>
+  <Tab title="Data Management">
+    - Regularly review and merge duplicate organizations
+    - Keep organization information up-to-date with current details
+    - Use domain matching to automatically associate people
+    - Maintain consistent naming across different data sources
+    - Archive inactive organizations rather than deleting them
+  </Tab>
+  <Tab title="Integration Workflows">
+    - Set up automated organization extraction from meeting transcripts
+    - Use webhooks to sync organization data with external CRM systems
+    - Implement domain-based matching for incoming contacts
+    - Create organization hierarchies for complex business relationships
+    - Track organization relationships through structured source data
+  </Tab>
+</Tabs>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="People Management"
+    icon="users"
+    href="/api-reference/people"
+  >
+    Manage individual contacts and their organizational relationships.
+  </Card>
+  <Card
+    title="Meeting Management"
+    icon="calendar"
+    href="/api-reference/meetings"
+  >
+    Track meetings and extract organizational insights automatically.
+  </Card>
+</CardGroup>
