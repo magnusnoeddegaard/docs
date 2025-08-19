@@ -41,6 +41,18 @@
     {
       "name": "Webhooks",
       "description": "Webhook endpoints for external service integration"
+    },
+    {
+      "name": "Insights",
+      "description": "Insight management endpoints for AI-extracted and manual insights from meetings"
+    },
+    {
+      "name": "Organizations",
+      "description": "Organization management endpoints for companies, clients, partners, and external entities"
+    },
+    {
+      "name": "People",
+      "description": "People management endpoints for contacts and individuals within organizations and workspaces"
     }
   ],
   "paths": {
@@ -2220,6 +2232,1252 @@
           }
         }
       }
+    },
+    "/api/insights": {
+      "get": {
+        "summary": "Get User Insights",
+        "description": "Retrieve all insights accessible to the authenticated user, including insights from their spaces, sorted by creation date (newest first).",
+        "operationId": "getUserInsights",
+        "tags": ["Insights"],
+        "responses": {
+          "200": {
+            "description": "Insights retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InsightsListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create Insight",
+        "description": "Create a new insight manually. Insights can also be automatically extracted from meeting transcriptions.",
+        "operationId": "createInsight",
+        "tags": ["Insights"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name"],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "Clear, descriptive insight name"
+                  },
+                  "direct_quote": {
+                    "type": "string",
+                    "description": "Exact quote or direct statement that led to this insight"
+                  },
+                  "details": {
+                    "type": "string",
+                    "description": "Detailed description and context for the insight"
+                  },
+                  "type_id": {
+                    "type": "integer",
+                    "default": 3,
+                    "description": "Insight type ID (1=User Feedback, 2=Performance, 3=Issue, etc.)"
+                  },
+                  "priority_id": {
+                    "type": "integer",
+                    "default": 1,
+                    "description": "Insight priority ID (1=low, 2=medium, 3=high, 4=critical)"
+                  },
+                  "status_id": {
+                    "type": "integer",
+                    "default": 1,
+                    "description": "Insight status ID (1=new, 2=reviewed, 3=actioned)"
+                  },
+                  "person_id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "UUID of the person who provided this insight"
+                  },
+                  "source_bot_id": {
+                    "type": "string",
+                    "description": "Bot ID if this insight was extracted from a meeting"
+                  },
+                  "task_id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "Task ID to automatically connect this insight to a task"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Insight created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Insight"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - Insight data is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Failed to create insight",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/insights/{insightId}": {
+      "get": {
+        "summary": "Get Insight by ID",
+        "description": "Retrieve a specific insight by its ID with complete details including connected tasks.",
+        "operationId": "getInsightById",
+        "tags": ["Insights"],
+        "parameters": [
+          {
+            "name": "insightId",
+            "in": "path",
+            "description": "The insight ID to retrieve (UUID format)",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Insight retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Insight"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Insight not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Update Insight",
+        "description": "Update multiple fields of an insight at once.",
+        "operationId": "updateInsight",
+        "tags": ["Insights"],
+        "parameters": [
+          {
+            "name": "insightId",
+            "in": "path",
+            "description": "The insight ID to update (UUID format)",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "Updated insight name"
+                  },
+                  "direct_quote": {
+                    "type": "string",
+                    "description": "Updated direct quote"
+                  },
+                  "details": {
+                    "type": "string",
+                    "description": "Updated insight details"
+                  },
+                  "type_id": {
+                    "type": "integer",
+                    "description": "Updated type ID"
+                  },
+                  "priority_id": {
+                    "type": "integer",
+                    "description": "Updated priority ID"
+                  },
+                  "status_id": {
+                    "type": "integer",
+                    "description": "Updated status ID"
+                  },
+                  "person_id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "Updated person ID"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Insight updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Insight"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Insight not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete Insight",
+        "description": "Permanently delete a single insight. This action cannot be undone.",
+        "operationId": "deleteInsight",
+        "tags": ["Insights"],
+        "parameters": [
+          {
+            "name": "insightId",
+            "in": "path",
+            "description": "The insight ID to delete (UUID format)",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Insight deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Insight not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/insights/delete-multiple": {
+      "delete": {
+        "summary": "Delete Multiple Insights",
+        "description": "Permanently delete multiple insights at once. This action cannot be undone.",
+        "operationId": "deleteMultipleInsights",
+        "tags": ["Insights"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["insightIds"],
+                "properties": {
+                  "insightIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "description": "Array of insight UUIDs to delete"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Insights deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request body",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/insights/task-insights": {
+      "get": {
+        "summary": "Get Task Insights",
+        "description": "Retrieve all insights connected to a specific task.",
+        "operationId": "getTaskInsights",
+        "tags": ["Insights"],
+        "parameters": [
+          {
+            "name": "taskId",
+            "in": "query",
+            "description": "The UUID of the task to retrieve insights for",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Task insights retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Insight"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Task ID is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/insights/meeting-insights": {
+      "get": {
+        "summary": "Get Meeting Insights",
+        "description": "Retrieve all insights associated with a specific meeting.",
+        "operationId": "getMeetingInsights",
+        "tags": ["Insights"],
+        "parameters": [
+          {
+            "name": "meetingBotId",
+            "in": "query",
+            "description": "The bot ID associated with the meeting",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Meeting insights retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Insight"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Meeting bot ID is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/insights/unconnected-insights": {
+      "get": {
+        "summary": "Get Unconnected Insights",
+        "description": "Retrieve insights that are not connected to a specific task, useful for creating new connections.",
+        "operationId": "getUnconnectedInsights",
+        "tags": ["Insights"],
+        "parameters": [
+          {
+            "name": "taskId",
+            "in": "query",
+            "description": "The UUID of the task to filter against",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "spaceId",
+            "in": "query",
+            "description": "Optional space ID to scope the search (if not provided, searches user's insights)",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Unconnected insights retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Insight"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Task ID is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/insights/types": {
+      "get": {
+        "summary": "Get Insight Types",
+        "description": "Retrieve all available insight types for categorization.",
+        "operationId": "getInsightTypes",
+        "tags": ["Insights"],
+        "responses": {
+          "200": {
+            "description": "Insight types retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/InsightType"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/insights/priorities": {
+      "get": {
+        "summary": "Get Insight Priorities",
+        "description": "Retrieve all available insight priorities.",
+        "operationId": "getInsightPriorities",
+        "tags": ["Insights"],
+        "responses": {
+          "200": {
+            "description": "Insight priorities retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/InsightPriority"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/insights/statuses": {
+      "get": {
+        "summary": "Get Insight Statuses",
+        "description": "Retrieve all available insight statuses.",
+        "operationId": "getInsightStatuses",
+        "tags": ["Insights"],
+        "responses": {
+          "200": {
+            "description": "Insight statuses retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/InsightStatus"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/insights/{insightId}/type/{typeId}": {
+      "put": {
+        "summary": "Update Insight Type",
+        "description": "Update the type of a specific insight using its type ID.",
+        "operationId": "updateInsightType",
+        "tags": ["Insights"],
+        "parameters": [
+          {
+            "name": "insightId",
+            "in": "path",
+            "description": "The insight ID to update (UUID format)",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "typeId",
+            "in": "path",
+            "description": "The type ID to set",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Insight type updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Insight"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Insight not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/insights/{insightId}/priority/{priorityId}": {
+      "put": {
+        "summary": "Update Insight Priority",
+        "description": "Update the priority of a specific insight using its priority ID.",
+        "operationId": "updateInsightPriority",
+        "tags": ["Insights"],
+        "parameters": [
+          {
+            "name": "insightId",
+            "in": "path",
+            "description": "The insight ID to update (UUID format)",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "priorityId",
+            "in": "path",
+            "description": "The priority ID to set (1=low, 2=medium, 3=high, 4=critical)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Insight priority updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Insight"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Insight not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/insights/{insightId}/status/{statusId}": {
+      "put": {
+        "summary": "Update Insight Status",
+        "description": "Update the status of a specific insight using its status ID.",
+        "operationId": "updateInsightStatus",
+        "tags": ["Insights"],
+        "parameters": [
+          {
+            "name": "insightId",
+            "in": "path",
+            "description": "The insight ID to update (UUID format)",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "statusId",
+            "in": "path",
+            "description": "The status ID to set (1=new, 2=reviewed, 3=actioned)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Insight status updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Insight"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Insight not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/insights/task-connection": {
+      "post": {
+        "summary": "Create Task-Insight Connection",
+        "description": "Connect insights to one or more tasks to make insights actionable.",
+        "operationId": "createTaskInsightConnection",
+        "tags": ["Insights"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["insightId", "taskIds"],
+                "properties": {
+                  "insightId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "The UUID of the insight to connect"
+                  },
+                  "taskIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "description": "Array of task UUIDs to connect the insight to"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Task-insight connection created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid insight or task IDs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/insights/unconnect-insights-from-task": {
+      "post": {
+        "summary": "Disconnect Insights from Task",
+        "description": "Remove the connection between insights and a task.",
+        "operationId": "disconnectInsightsFromTask",
+        "tags": ["Insights"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["insightIds", "taskId"],
+                "properties": {
+                  "insightIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "description": "Array of insight UUIDs to disconnect"
+                  },
+                  "taskId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "The UUID of the task to disconnect from"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Insights disconnected from task successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid insight or task IDs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/organizations": {
+      "get": {
+        "summary": "List Organizations",
+        "description": "Retrieve all organizations that the authenticated user has access to within their spaces, sorted by creation date (newest first).",
+        "operationId": "listOrganizations",
+        "tags": ["Organizations"],
+        "responses": {
+          "200": {
+            "description": "Organizations retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationsListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid Supabase user session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error - User not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create Organization",
+        "description": "Create a new organization manually or through automated extraction from meetings.",
+        "operationId": "createOrganization",
+        "tags": ["Organizations"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name"],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "Organization name (company, client, partner, etc.)"
+                  },
+                  "type_id": {
+                    "type": "integer",
+                    "default": 1,
+                    "description": "Organization type ID: 1=Company, 2=Client, 3=Partner, 4=Vendor, etc."
+                  },
+                  "domain": {
+                    "type": "string",
+                    "description": "Organization's primary domain (e.g., 'acme.com')"
+                  },
+                  "source": {
+                    "type": "object",
+                    "description": "Source information tracking where this organization was discovered",
+                    "properties": {
+                      "platform": {
+                        "type": "string",
+                        "enum": ["meeting_extraction", "manual", "import"],
+                        "description": "Source platform"
+                      },
+                      "meeting_id": {
+                        "type": "string",
+                        "description": "Meeting UUID if extracted from meeting"
+                      },
+                      "extracted_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "Extraction timestamp"
+                      },
+                      "created_by": {
+                        "type": "string",
+                        "description": "User identifier for manual creation"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Organization created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - Invalid organization data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Invalid Supabase user session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/organizations/{id}": {
+      "get": {
+        "summary": "Get Organization",
+        "description": "Retrieve a specific organization by its ID with complete details and relationships.",
+        "operationId": "getOrganization",
+        "tags": ["Organizations"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The organization ID to retrieve",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Organization retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Invalid Supabase user session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Organization not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Update Organization",
+        "description": "Update an existing organization's details.",
+        "operationId": "updateOrganization",
+        "tags": ["Organizations"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The organization ID to update",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "Updated organization name"
+                  },
+                  "type_id": {
+                    "type": "integer",
+                    "description": "Updated organization type ID"
+                  },
+                  "domain": {
+                    "type": "string",
+                    "description": "Updated domain name"
+                  },
+                  "source": {
+                    "type": "object",
+                    "description": "Updated source tracking information",
+                    "properties": {
+                      "platform": {
+                        "type": "string",
+                        "enum": ["meeting_extraction", "manual", "import"]
+                      },
+                      "meeting_id": {
+                        "type": "string"
+                      },
+                      "extracted_at": {
+                        "type": "string",
+                        "format": "date-time"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Organization updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - Invalid organization data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Organization not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete Organization",
+        "description": "Permanently delete an organization. This action cannot be undone.",
+        "operationId": "deleteOrganization",
+        "tags": ["Organizations"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The organization ID to delete",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Organization deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Organization not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/organizations/types": {
+      "get": {
+        "summary": "Get Organization Types",
+        "description": "Retrieve all available organization types for categorization.",
+        "operationId": "getOrganizationTypes",
+        "tags": ["Organizations"],
+        "responses": {
+          "200": {
+            "description": "Organization types retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationTypesResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error - Database connection error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/organizations/{id}/people": {
+      "get": {
+        "summary": "Get Organization People",
+        "description": "Retrieve all people associated with a specific organization.",
+        "operationId": "getOrganizationPeople",
+        "tags": ["Organizations"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The organization ID to retrieve people for",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Organization people retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationPeopleResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Organization not found or access denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -2837,6 +4095,382 @@
             "items": {
               "$ref": "#/components/schemas/SimilarTaskPair"
             }
+          }
+        }
+      },
+      "Insight": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique insight identifier"
+          },
+          "name": {
+            "type": "string",
+            "description": "Clear, descriptive insight name"
+          },
+          "direct_quote": {
+            "type": "string",
+            "description": "Exact quote or direct statement that led to this insight"
+          },
+          "details": {
+            "type": "string",
+            "description": "Detailed description and context for the insight"
+          },
+          "type_id": {
+            "type": "integer",
+            "description": "Insight type ID"
+          },
+          "priority_id": {
+            "type": "integer",
+            "description": "Insight priority ID"
+          },
+          "status_id": {
+            "type": "integer",
+            "description": "Insight status ID"
+          },
+          "type": {
+            "$ref": "#/components/schemas/InsightType"
+          },
+          "priority": {
+            "$ref": "#/components/schemas/InsightPriority"
+          },
+          "status": {
+            "$ref": "#/components/schemas/InsightStatus"
+          },
+          "person": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "description": "Person ID"
+              },
+              "full_name": {
+                "type": "string",
+                "description": "Person's full name"
+              }
+            }
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID of user who created the insight"
+          },
+          "space_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Workspace/space ID"
+          },
+          "person_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID of person who provided the insight"
+          },
+          "source_bot_id": {
+            "type": "string",
+            "description": "Bot ID if insight was extracted from a meeting"
+          },
+          "disabled": {
+            "type": "boolean",
+            "description": "Whether insight is disabled"
+          },
+          "tasks": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "description": "Connected task ID"
+                },
+                "name": {
+                  "type": "string",
+                  "description": "Connected task name"
+                },
+                "status_id": {
+                  "type": "integer",
+                  "description": "Connected task status ID"
+                }
+              }
+            },
+            "description": "Array of connected tasks"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Insight creation timestamp"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Insight last update timestamp"
+          }
+        }
+      },
+      "InsightType": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Type ID"
+          },
+          "name": {
+            "type": "string",
+            "description": "Type name",
+            "enum": ["User Feedback", "Performance Insight", "Issue Identification", "Feature Request", "Strategic Decision"]
+          },
+          "description": {
+            "type": "string",
+            "description": "Type description"
+          }
+        }
+      },
+      "InsightPriority": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Priority ID"
+          },
+          "name": {
+            "type": "string",
+            "description": "Priority name",
+            "enum": ["low", "medium", "high", "critical"]
+          }
+        }
+      },
+      "InsightStatus": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Status ID"
+          },
+          "name": {
+            "type": "string",
+            "description": "Status name",
+            "enum": ["new", "reviewed", "actioned"]
+          }
+        }
+      },
+      "InsightsListResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "Response success status"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Insight"
+            },
+            "description": "Array of insights"
+          }
+        }
+      },
+      "Organization": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique organization identifier"
+          },
+          "name": {
+            "type": "string",
+            "description": "Organization name"
+          },
+          "type_id": {
+            "type": "integer",
+            "description": "Organization type ID"
+          },
+          "type": {
+            "$ref": "#/components/schemas/OrganizationType"
+          },
+          "domain": {
+            "type": "string",
+            "description": "Organization's primary domain"
+          },
+          "source": {
+            "$ref": "#/components/schemas/OrganizationSource"
+          },
+          "space_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Workspace/space ID"
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "User ID who created the organization"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Organization creation timestamp"
+          },
+          "people_count": {
+            "type": "integer",
+            "description": "Number of people associated with this organization"
+          },
+          "recent_meetings": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "Meeting ID"
+                },
+                "title": {
+                  "type": "string",
+                  "description": "Meeting title"
+                },
+                "date": {
+                  "type": "string",
+                  "format": "date-time",
+                  "description": "Meeting date"
+                }
+              }
+            },
+            "description": "Array of recent meetings involving this organization"
+          }
+        }
+      },
+      "OrganizationType": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Type ID"
+          },
+          "name": {
+            "type": "string",
+            "description": "Type name",
+            "enum": ["Company", "Client", "Partner", "Vendor", "Educational", "Non-profit"]
+          },
+          "description": {
+            "type": "string",
+            "description": "Type description"
+          }
+        }
+      },
+      "OrganizationSource": {
+        "type": "object",
+        "properties": {
+          "platform": {
+            "type": "string",
+            "enum": ["meeting_extraction", "manual", "import"],
+            "description": "Source platform where organization was discovered"
+          },
+          "meeting_id": {
+            "type": "string",
+            "description": "Meeting UUID if extracted from meeting"
+          },
+          "extracted_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Extraction timestamp"
+          },
+          "created_by": {
+            "type": "string",
+            "description": "User identifier for manual creation"
+          }
+        }
+      },
+      "OrganizationPerson": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Person ID"
+          },
+          "full_name": {
+            "type": "string",
+            "description": "Person's full name"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Person's email address"
+          },
+          "title": {
+            "type": "string",
+            "description": "Person's job title"
+          },
+          "phone_number": {
+            "type": "string",
+            "description": "Person's phone number"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Person creation timestamp"
+          }
+        }
+      },
+      "OrganizationsListResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "Response success status"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Organization"
+            },
+            "description": "Array of organizations"
+          }
+        }
+      },
+      "OrganizationResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "Response success status"
+          },
+          "data": {
+            "$ref": "#/components/schemas/Organization"
+          }
+        }
+      },
+      "OrganizationTypesResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "Response success status"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrganizationType"
+            },
+            "description": "Array of organization types"
+          }
+        }
+      },
+      "OrganizationPeopleResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "Response success status"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrganizationPerson"
+            },
+            "description": "Array of people associated with the organization"
           }
         }
       },
