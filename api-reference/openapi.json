@@ -25,6 +25,24 @@
       "bearerAuth": []
     }
   ],
+  "tags": [
+    {
+      "name": "Meetings",
+      "description": "Meeting management endpoints for calendar sync, transcription, and AI processing"
+    },
+    {
+      "name": "Tasks",
+      "description": "Task management endpoints for AI-extracted and manual tasks"
+    },
+    {
+      "name": "Task Comments",
+      "description": "Task comment endpoints for collaboration and discussion"
+    },
+    {
+      "name": "Webhooks",
+      "description": "Webhook endpoints for external service integration"
+    }
+  ],
   "paths": {
     "/api/meetings": {
       "get": {
@@ -688,6 +706,1520 @@
           }
         }
       }
+    },
+    "/api/tasks": {
+      "get": {
+        "summary": "List Tasks",
+        "description": "Retrieve tasks with extensive filtering and sorting options",
+        "operationId": "listTasks",
+        "tags": ["Tasks"],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Number of tasks to return (max 100)",
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Number of tasks to skip for pagination",
+            "schema": {
+              "type": "integer",
+              "default": 0
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Filter by task status",
+            "schema": {
+              "type": "string",
+              "enum": ["pending", "in_progress", "blocked", "completed", "cancelled"]
+            }
+          },
+          {
+            "name": "priority",
+            "in": "query",
+            "description": "Filter by priority level",
+            "schema": {
+              "type": "string",
+              "enum": ["low", "medium", "high", "critical"]
+            }
+          },
+          {
+            "name": "assignee_id",
+            "in": "query",
+            "description": "Filter tasks assigned to a specific user",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "meeting_id",
+            "in": "query",
+            "description": "Filter tasks from a specific meeting",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "space_id",
+            "in": "query",
+            "description": "Filter tasks in a specific workspace",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "Sort field",
+            "schema": {
+              "type": "string",
+              "enum": ["created_at", "due_date", "priority", "title", "status"],
+              "default": "created_at"
+            }
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "description": "Sort order",
+            "schema": {
+              "type": "string",
+              "enum": ["asc", "desc"],
+              "default": "desc"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tasks retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TasksListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create Task",
+        "description": "Create a new task manually. Tasks can also be automatically extracted from meeting transcriptions.",
+        "operationId": "createTask",
+        "tags": ["Tasks"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name"],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "Clear, actionable task name"
+                  },
+                  "description": {
+                    "type": "string",
+                    "description": "Detailed description of what needs to be done"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": ["pending", "in_progress", "blocked", "completed", "cancelled"],
+                    "default": "pending",
+                    "description": "Initial task status"
+                  },
+                  "priority_id": {
+                    "type": "string",
+                    "default": "2",
+                    "description": "Task priority ID: 1=low, 2=medium, 3=high, 4=critical"
+                  },
+                  "status_id": {
+                    "type": "string",
+                    "default": "1",
+                    "description": "Task status ID: 1=todo, 2=in_progress, 3=completed, etc."
+                  },
+                  "user_id": {
+                    "type": "string",
+                    "description": "User ID of the person assigned to this task (use 'sindre' for Sindre assignment)"
+                  },
+                  "is_sindre_assigned": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Whether this task is assigned to Sindre AI assistant"
+                  },
+                  "event_id": {
+                    "type": "integer",
+                    "description": "ID of the meeting/event this task originated from (if applicable)"
+                  },
+                  "bot_ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Array of bot IDs associated with this task"
+                  },
+                  "assigned_to_name": {
+                    "type": "string",
+                    "description": "Name of the person assigned to this task"
+                  },
+                  "assigned_to_email": {
+                    "type": "string",
+                    "format": "email",
+                    "description": "Email of the person assigned to this task"
+                  },
+                  "space_id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "Workspace/space ID (defaults to user's default space)"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Task created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Task"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - Task data is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Failed to create task",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tasks/{taskId}": {
+      "get": {
+        "summary": "Get Task",
+        "description": "Retrieve a specific task by its ID with complete details and related information",
+        "operationId": "getTask",
+        "tags": ["Tasks"],
+        "parameters": [
+          {
+            "name": "taskId",
+            "in": "path",
+            "description": "The task ID to retrieve",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Task retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Task"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Task not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "User cannot access task",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Update Task",
+        "description": "Update multiple fields of a task at once",
+        "operationId": "updateTask",
+        "tags": ["Tasks"],
+        "parameters": [
+          {
+            "name": "taskId",
+            "in": "path",
+            "description": "The task ID to update",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "Updated task name"
+                  },
+                  "description": {
+                    "type": "string",
+                    "description": "Updated task description"
+                  },
+                  "status_id": {
+                    "type": "string",
+                    "description": "Updated status ID"
+                  },
+                  "priority_id": {
+                    "type": "string",
+                    "description": "Updated priority ID"
+                  },
+                  "user_id": {
+                    "type": "string",
+                    "description": "New assignee user ID"
+                  },
+                  "is_sindre_assigned": {
+                    "type": "boolean",
+                    "description": "Whether task is assigned to Sindre"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Task updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Task"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Task not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete Task",
+        "description": "Permanently delete a task. This action cannot be undone.",
+        "operationId": "deleteTask",
+        "tags": ["Tasks"],
+        "parameters": [
+          {
+            "name": "taskId",
+            "in": "path",
+            "description": "The task ID to delete",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Task deleted successfully"
+          },
+          "404": {
+            "description": "Task not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "User cannot delete task",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tasks/user-tasks": {
+      "get": {
+        "summary": "Get User Tasks",
+        "description": "Retrieve all tasks assigned to the authenticated user",
+        "operationId": "getUserTasks",
+        "tags": ["Tasks"],
+        "responses": {
+          "200": {
+            "description": "User tasks retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Task"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No tasks found for this user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Failed to fetch user tasks",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tasks/meeting-tasks": {
+      "get": {
+        "summary": "Get Meeting Tasks",
+        "description": "Retrieve tasks associated with a specific meeting or event",
+        "operationId": "getMeetingTasks",
+        "tags": ["Tasks"],
+        "parameters": [
+          {
+            "name": "eventId",
+            "in": "query",
+            "description": "The ID of the event/meeting to retrieve tasks for",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Meeting tasks retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Task"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Event ID is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tasks/space-tasks": {
+      "get": {
+        "summary": "Get Space Tasks",
+        "description": "Retrieve all tasks associated with a specific workspace or space",
+        "operationId": "getSpaceTasks",
+        "tags": ["Tasks"],
+        "parameters": [
+          {
+            "name": "spaceId",
+            "in": "query",
+            "description": "The UUID of the space to retrieve tasks for",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Space tasks retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Task"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Space ID is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tasks/bet-tasks": {
+      "get": {
+        "summary": "Get Bet Tasks",
+        "description": "Retrieve all tasks associated with a specific bet or strategic initiative",
+        "operationId": "getBetTasks",
+        "tags": ["Tasks"],
+        "parameters": [
+          {
+            "name": "betId",
+            "in": "query",
+            "description": "The UUID of the bet to retrieve tasks for",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Bet tasks retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Task"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bet ID is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tasks/insight-tasks": {
+      "get": {
+        "summary": "Get Insight Tasks",
+        "description": "Retrieve all tasks connected to a specific insight",
+        "operationId": "getInsightTasks",
+        "tags": ["Tasks"],
+        "parameters": [
+          {
+            "name": "insightId",
+            "in": "query",
+            "description": "The UUID of the insight to retrieve tasks for",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Insight tasks retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Task"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Insight ID is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tasks/unconnected-tasks": {
+      "get": {
+        "summary": "Get Unconnected Tasks",
+        "description": "Retrieve tasks that are not connected to a specific insight",
+        "operationId": "getUnconnectedTasks",
+        "tags": ["Tasks"],
+        "parameters": [
+          {
+            "name": "insightId",
+            "in": "query",
+            "description": "The UUID of the insight to filter against",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "spaceId",
+            "in": "query",
+            "description": "Optional space ID to scope the search",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Unconnected tasks retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Task"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tasks/statuses": {
+      "get": {
+        "summary": "Get Task Statuses",
+        "description": "Retrieve all available task statuses",
+        "operationId": "getTaskStatuses",
+        "tags": ["Tasks"],
+        "responses": {
+          "200": {
+            "description": "Task statuses retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TaskStatus"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tasks/priorities": {
+      "get": {
+        "summary": "Get Task Priorities",
+        "description": "Retrieve all available task priorities",
+        "operationId": "getTaskPriorities",
+        "tags": ["Tasks"],
+        "responses": {
+          "200": {
+            "description": "Task priorities retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TaskPriority"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tasks/{taskId}/status": {
+      "patch": {
+        "summary": "Update Task Status",
+        "description": "Update the status of a specific task using its status ID",
+        "operationId": "updateTaskStatus",
+        "tags": ["Tasks"],
+        "parameters": [
+          {
+            "name": "taskId",
+            "in": "path",
+            "description": "The task ID to update",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["statusId"],
+                "properties": {
+                  "statusId": {
+                    "type": "string",
+                    "description": "The ID of the status to set"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Task status updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Task"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Task not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tasks/{taskId}/priority": {
+      "patch": {
+        "summary": "Update Task Priority",
+        "description": "Update the priority of a specific task using its priority ID",
+        "operationId": "updateTaskPriority",
+        "tags": ["Tasks"],
+        "parameters": [
+          {
+            "name": "taskId",
+            "in": "path",
+            "description": "The task ID to update",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["priorityId"],
+                "properties": {
+                  "priorityId": {
+                    "type": "string",
+                    "description": "The ID of the priority to set"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Task priority updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Task"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Task not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tasks/{taskId}/assignee": {
+      "patch": {
+        "summary": "Update Task Assignee",
+        "description": "Update the assignee of a specific task",
+        "operationId": "updateTaskAssignee",
+        "tags": ["Tasks"],
+        "parameters": [
+          {
+            "name": "taskId",
+            "in": "path",
+            "description": "The task ID to update",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "assigneeId": {
+                    "type": "string",
+                    "description": "User ID to assign the task to. Use 'sindre' for Sindre assignment, 'null' for unassigned"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Task assignee updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Task"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Assignee not found in space",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Task not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tasks/{taskId}/bet/{betId}": {
+      "patch": {
+        "summary": "Update Task Bet",
+        "description": "Associate a task with a bet or remove bet association",
+        "operationId": "updateTaskBet",
+        "tags": ["Tasks"],
+        "parameters": [
+          {
+            "name": "taskId",
+            "in": "path",
+            "description": "The UUID of the task to update",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "betId",
+            "in": "path",
+            "description": "The UUID of the bet to associate with the task (use 'null' to remove association)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Task bet updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Task"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Task not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tasks/find-all-similar-backlog": {
+      "post": {
+        "summary": "Find Similar Tasks in Backlog",
+        "description": "Analyze all tasks in a space/backlog to find similar or duplicate tasks",
+        "operationId": "findSimilarTasksInBacklog",
+        "tags": ["Tasks"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "spaceId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "The UUID of the space to analyze (optional, defaults to user's tasks)"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Similar task pairs found successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimilarTasksResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tasks/merge": {
+      "put": {
+        "summary": "Merge Tasks",
+        "description": "Merge two similar tasks into one, combining their descriptions intelligently",
+        "operationId": "mergeTasks",
+        "tags": ["Tasks"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["sourceTaskData", "targetTaskData"],
+                "properties": {
+                  "sourceTaskData": {
+                    "type": "object",
+                    "description": "The source task data to merge (will be deleted after merge)",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "description": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "targetTaskData": {
+                    "type": "object",
+                    "description": "The target task data to merge into (will be updated with merged content)",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "description": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Tasks merged successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Task"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid task data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tasks/generate-description": {
+      "post": {
+        "summary": "Generate Task Description",
+        "description": "Use AI to generate a detailed description for a task based on its name",
+        "operationId": "generateTaskDescription",
+        "tags": ["Tasks"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["taskData"],
+                "properties": {
+                  "taskData": {
+                    "type": "object",
+                    "description": "Task data containing at minimum the task name",
+                    "properties": {
+                      "name": {
+                        "type": "string",
+                        "description": "Task name to generate description for"
+                      }
+                    },
+                    "required": ["name"]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Description generated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "description": {
+                      "type": "string",
+                      "description": "Generated task description"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Task data is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tasks/insight-connection": {
+      "post": {
+        "summary": "Create Insight-Task Connection",
+        "description": "Connect a task to one or more insights",
+        "operationId": "createInsightTaskConnection",
+        "tags": ["Tasks"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["taskId", "insightIds"],
+                "properties": {
+                  "taskId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "The UUID of the task to connect"
+                  },
+                  "insightIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "description": "Array of insight UUIDs to connect the task to"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Insight-task connection created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid task or insight IDs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tasks/unconnect-tasks-from-insight": {
+      "post": {
+        "summary": "Disconnect Tasks from Insight",
+        "description": "Remove the connection between tasks and an insight",
+        "operationId": "disconnectTasksFromInsight",
+        "tags": ["Tasks"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["taskIds", "insightId"],
+                "properties": {
+                  "taskIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "description": "Array of task UUIDs to disconnect"
+                  },
+                  "insightId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "The UUID of the insight to disconnect from"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Tasks disconnected from insight successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid task or insight IDs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tasks/{taskId}/comments": {
+      "get": {
+        "summary": "List Task Comments",
+        "description": "Get all comments for a specific task, including threaded replies and mentions",
+        "operationId": "getTaskComments",
+        "tags": ["Task Comments"],
+        "parameters": [
+          {
+            "name": "taskId",
+            "in": "path",
+            "description": "The task ID to retrieve comments for",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Task comments retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TaskComment"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Task not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create Task Comment",
+        "description": "Add a new comment to a task with support for mentions and threading",
+        "operationId": "createTaskComment",
+        "tags": ["Task Comments"],
+        "parameters": [
+          {
+            "name": "taskId",
+            "in": "path",
+            "description": "The task ID to add comment to",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["content"],
+                "properties": {
+                  "content": {
+                    "type": "object",
+                    "description": "Comment content object (JSONB format)",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": ["text"]
+                      },
+                      "text": {
+                        "type": "string",
+                        "description": "Comment text here (supports Markdown)"
+                      }
+                    },
+                    "required": ["type", "text"]
+                  },
+                  "mentions": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "description": "Array of user IDs mentioned in the comment"
+                  },
+                  "parent_id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "Parent comment ID for threaded replies"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Comment created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskComment"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid comment data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Task not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tasks/{taskId}/comments/{commentId}": {
+      "put": {
+        "summary": "Update Task Comment",
+        "description": "Update an existing task comment",
+        "operationId": "updateTaskComment",
+        "tags": ["Task Comments"],
+        "parameters": [
+          {
+            "name": "taskId",
+            "in": "path",
+            "description": "The task ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "commentId",
+            "in": "path",
+            "description": "The comment ID to update",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["content"],
+                "properties": {
+                  "content": {
+                    "type": "object",
+                    "description": "Updated comment content",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": ["text"]
+                      },
+                      "text": {
+                        "type": "string",
+                        "description": "Updated comment text"
+                      }
+                    },
+                    "required": ["type", "text"]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Comment updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskComment"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Comment not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete Task Comment",
+        "description": "Delete a task comment (soft delete - sets is_deleted flag)",
+        "operationId": "deleteTaskComment",
+        "tags": ["Task Comments"],
+        "parameters": [
+          {
+            "name": "taskId",
+            "in": "path",
+            "description": "The task ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "commentId",
+            "in": "path",
+            "description": "The comment ID to delete",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Comment deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Comment not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -930,6 +2462,381 @@
           },
           "message": {
             "type": "string"
+          }
+        }
+      },
+      "Task": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique task identifier"
+          },
+          "name": {
+            "type": "string",
+            "description": "Task title/name"
+          },
+          "description": {
+            "type": "string",
+            "description": "Detailed task description"
+          },
+          "event_id": {
+            "type": "integer",
+            "description": "Associated meeting/event ID"
+          },
+          "bot_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Array of bot IDs associated with this task"
+          },
+          "status_id": {
+            "type": "integer",
+            "description": "Task status ID"
+          },
+          "priority_id": {
+            "type": "integer",
+            "description": "Task priority ID"
+          },
+          "status": {
+            "$ref": "#/components/schemas/TaskStatus"
+          },
+          "priority": {
+            "$ref": "#/components/schemas/TaskPriority"
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID of assigned user"
+          },
+          "is_sindre_assigned": {
+            "type": "boolean",
+            "description": "Whether task is assigned to Sindre AI"
+          },
+          "assigned_to_name": {
+            "type": "string",
+            "description": "Name of assigned person"
+          },
+          "assigned_to_email": {
+            "type": "string",
+            "format": "email",
+            "description": "Email of assigned person"
+          },
+          "assignee": {
+            "$ref": "#/components/schemas/TaskAssignee"
+          },
+          "space_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Workspace/space ID"
+          },
+          "disabled": {
+            "type": "boolean",
+            "description": "Whether task is disabled"
+          },
+          "primary_task": {
+            "type": "object",
+            "properties": {
+              "tasks": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                }
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          },
+          "space_tasks": {
+            "type": "object",
+            "properties": {
+              "slug": {
+                "type": "string"
+              },
+              "space_id": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          },
+          "bet_tasks": {
+            "type": "object",
+            "properties": {
+              "bets": {
+                "$ref": "#/components/schemas/Bet"
+              }
+            }
+          },
+          "insights": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaskInsight"
+            }
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "TaskStatus": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Status ID"
+          },
+          "name": {
+            "type": "string",
+            "description": "Status name",
+            "enum": ["pending", "in_progress", "blocked", "completed", "cancelled"]
+          },
+          "description": {
+            "type": "string",
+            "description": "Status description"
+          }
+        }
+      },
+      "TaskPriority": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Priority ID"
+          },
+          "name": {
+            "type": "string",
+            "description": "Priority name",
+            "enum": ["low", "medium", "high", "critical"]
+          },
+          "description": {
+            "type": "string",
+            "description": "Priority description"
+          }
+        }
+      },
+      "TaskAssignee": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "User ID"
+          },
+          "full_name": {
+            "type": "string",
+            "description": "Full name"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Email address"
+          },
+          "avatar_url": {
+            "type": "string",
+            "format": "uri",
+            "description": "Avatar URL"
+          }
+        }
+      },
+      "TaskInsight": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Insight ID"
+          },
+          "name": {
+            "type": "string",
+            "description": "Insight name"
+          },
+          "details": {
+            "type": "string",
+            "description": "Insight details"
+          }
+        }
+      },
+      "Bet": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Bet ID"
+          },
+          "name": {
+            "type": "string",
+            "description": "Bet name"
+          },
+          "status_id": {
+            "type": "integer",
+            "description": "Bet status ID"
+          },
+          "icon": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer"
+              },
+              "name": {
+                "type": "string"
+              }
+            }
+          },
+          "status": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer"
+              },
+              "name": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "TaskComment": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Comment ID"
+          },
+          "task_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Task ID"
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "User ID who created comment"
+          },
+          "content": {
+            "type": "object",
+            "description": "Comment content in JSONB format",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["text"]
+              },
+              "text": {
+                "type": "string",
+                "description": "Comment text content"
+              }
+            }
+          },
+          "mentions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Array of mentioned user IDs"
+          },
+          "parent_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Parent comment ID for threading"
+          },
+          "is_deleted": {
+            "type": "boolean",
+            "description": "Whether comment is deleted"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "TasksListResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Task"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/Pagination"
+          }
+        }
+      },
+      "SimilarTaskPair": {
+        "type": "object",
+        "properties": {
+          "task1": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string"
+              },
+              "similarity_score": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          },
+          "task2": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string"
+              },
+              "similarity_score": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          },
+          "matching_elements": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "SimilarTasksResponse": {
+        "type": "object",
+        "properties": {
+          "similarPairs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SimilarTaskPair"
+            }
           }
         }
       },
