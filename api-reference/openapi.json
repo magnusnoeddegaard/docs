@@ -43,6 +43,10 @@
       "description": "Webhook endpoints for external service integration"
     },
     {
+      "name": "Bets",
+      "description": "Bet management endpoints for strategic initiatives and tracking"
+    },
+    {
       "name": "Insights",
       "description": "Insight management endpoints for AI-extracted and manual insights from meetings"
     },
@@ -2233,6 +2237,617 @@
         }
       }
     },
+    "/api/bets": {
+      "post": {
+        "summary": "Create Bet",
+        "description": "Create a new bet. If ownBet is true, the current user will be set as the owner.",
+        "operationId": "createBet",
+        "tags": ["Bets"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBetRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Bet created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Bet"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "Get Bets by IDs",
+        "description": "Retrieve specific bets by providing their IDs in the request body.",
+        "operationId": "getBetsByIds",
+        "tags": ["Bets"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["betIds"],
+                "properties": {
+                  "betIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "description": "Array of bet IDs to retrieve"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Bets retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Bet"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Bets not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete Multiple Bets",
+        "description": "Delete multiple bets at once.",
+        "operationId": "deleteMultipleBets",
+        "tags": ["Bets"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["betIds"],
+                "properties": {
+                  "betIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "description": "Array of bet IDs to delete"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Bets deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Bet"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bets/user": {
+      "get": {
+        "summary": "Get User Bets",
+        "description": "Retrieve all bets associated with the current user.",
+        "operationId": "getUserBets",
+        "tags": ["Bets"],
+        "responses": {
+          "200": {
+            "description": "User bets retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Bet"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No bets found for this user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bets/space/{spaceId}": {
+      "get": {
+        "summary": "Get Space Bets",
+        "description": "Retrieve all bets associated with a specific space.",
+        "operationId": "getSpaceBets",
+        "tags": ["Bets"],
+        "parameters": [
+          {
+            "name": "spaceId",
+            "in": "path",
+            "description": "The space ID to retrieve bets for",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Space bets retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Bet"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No bets found for this space",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bets/statuses": {
+      "get": {
+        "summary": "Get Available Statuses",
+        "description": "Retrieve all available bet statuses.",
+        "operationId": "getBetStatuses",
+        "tags": ["Bets"],
+        "responses": {
+          "200": {
+            "description": "Bet statuses retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BetStatus"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bets/{betId}": {
+      "get": {
+        "summary": "Get Bet",
+        "description": "Retrieve a specific bet by its ID.",
+        "operationId": "getBet",
+        "tags": ["Bets"],
+        "parameters": [
+          {
+            "name": "betId",
+            "in": "path",
+            "description": "The bet ID to retrieve",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Bet retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Bet"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Bet not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Update Bet",
+        "description": "Update bet properties.",
+        "operationId": "updateBet",
+        "tags": ["Bets"],
+        "parameters": [
+          {
+            "name": "betId",
+            "in": "path",
+            "description": "The bet ID to update",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBetRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Bet updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Bet"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Bet not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete Bet",
+        "description": "Permanently delete a bet. This action cannot be undone.",
+        "operationId": "deleteBet",
+        "tags": ["Bets"],
+        "parameters": [
+          {
+            "name": "betId",
+            "in": "path",
+            "description": "The bet ID to delete",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Bet deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Bet not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bets/{betId}/status/{statusId}": {
+      "patch": {
+        "summary": "Update Bet Status",
+        "description": "Update the status of a specific bet.",
+        "operationId": "updateBetStatus",
+        "tags": ["Bets"],
+        "parameters": [
+          {
+            "name": "betId",
+            "in": "path",
+            "description": "The bet ID to update",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "statusId",
+            "in": "path",
+            "description": "The new status ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Bet status updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Bet"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Bet not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bets/{betId}/owner/{ownerId}": {
+      "patch": {
+        "summary": "Update Bet Owner",
+        "description": "Update the owner of a specific bet.",
+        "operationId": "updateBetOwner",
+        "tags": ["Bets"],
+        "parameters": [
+          {
+            "name": "betId",
+            "in": "path",
+            "description": "The bet ID to update",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "ownerId",
+            "in": "path",
+            "description": "The new owner user ID (use 'null' to remove owner)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Bet owner updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Bet"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Bet not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bets/{betId}/done": {
+      "patch": {
+        "summary": "Mark Bet as Done",
+        "description": "Quickly mark a bet as completed by setting its status to completed.",
+        "operationId": "markBetDone",
+        "tags": ["Bets"],
+        "parameters": [
+          {
+            "name": "betId",
+            "in": "path",
+            "description": "The bet ID to mark as done",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Bet marked as done successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Bet"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Bet not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/insights": {
       "get": {
         "summary": "Get User Insights",
@@ -3935,37 +4550,231 @@
           "id": {
             "type": "string",
             "format": "uuid",
-            "description": "Bet ID"
+            "description": "Unique bet identifier"
           },
           "name": {
             "type": "string",
-            "description": "Bet name"
+            "description": "Bet name/title"
+          },
+          "description": {
+            "type": "string",
+            "description": "Detailed description of the bet"
           },
           "status_id": {
             "type": "integer",
-            "description": "Bet status ID"
+            "description": "Reference to the bet status"
           },
-          "icon": {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "integer"
-              },
-              "name": {
-                "type": "string"
-              }
-            }
+          "priority_id": {
+            "type": "integer",
+            "description": "Reference to the bet priority"
+          },
+          "icon_id": {
+            "type": "integer",
+            "description": "Reference to the bet icon"
+          },
+          "target_date": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Target completion date in ISO 8601 format"
+          },
+          "owner_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "UUID of the user who owns this bet",
+            "nullable": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the bet was created"
           },
           "status": {
+            "$ref": "#/components/schemas/BetStatus"
+          },
+          "icon": {
+            "$ref": "#/components/schemas/BetIcon"
+          },
+          "owner": {
             "type": "object",
             "properties": {
               "id": {
-                "type": "integer"
+                "type": "string",
+                "format": "uuid"
               },
-              "name": {
+              "email": {
+                "type": "string",
+                "format": "email"
+              },
+              "full_name": {
                 "type": "string"
               }
+            },
+            "nullable": true
+          },
+          "space": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "space_id": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
             }
+          }
+        },
+        "required": ["id", "name", "status_id", "priority_id", "icon_id", "target_date"]
+      },
+      "BetStatus": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Status ID"
+          },
+          "name": {
+            "type": "string",
+            "description": "Status name",
+            "examples": ["active", "completed", "cancelled", "on_hold"]
+          },
+          "description": {
+            "type": "string",
+            "description": "Status description"
+          }
+        },
+        "required": ["id", "name"]
+      },
+      "BetPriority": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Priority ID"
+          },
+          "name": {
+            "type": "string",
+            "description": "Priority name",
+            "examples": ["low", "medium", "high", "critical"]
+          },
+          "description": {
+            "type": "string",
+            "description": "Priority description"
+          }
+        },
+        "required": ["id", "name"]
+      },
+      "BetIcon": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Icon ID"
+          },
+          "name": {
+            "type": "string",
+            "description": "Icon name",
+            "examples": ["target", "trophy", "flag", "star", "rocket"]
+          }
+        },
+        "required": ["id", "name"]
+      },
+      "CreateBetRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the bet",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "description": {
+            "type": "string",
+            "description": "Detailed description of the bet"
+          },
+          "target_date": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Target completion date (ISO 8601 format)"
+          },
+          "status_id": {
+            "type": "integer",
+            "description": "Status ID (defaults to 1)",
+            "default": 1
+          },
+          "priority_id": {
+            "type": "integer",
+            "description": "Priority ID (defaults to 1)",
+            "default": 1
+          },
+          "icon_id": {
+            "type": "integer",
+            "description": "Icon ID (defaults to 1)",
+            "default": 1
+          },
+          "owner_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "User ID of the bet owner"
+          },
+          "ownBet": {
+            "type": "boolean",
+            "description": "If true, sets the current user as the owner"
+          },
+          "space_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Space ID to associate the bet with"
+          }
+        },
+        "required": ["name", "target_date"],
+        "examples": [
+          {
+            "name": "Increase user engagement by 40%",
+            "description": "Implement new onboarding flow and gamification elements",
+            "target_date": "2024-06-30T23:59:59Z",
+            "status_id": 1,
+            "priority_id": 2,
+            "icon_id": 1,
+            "ownBet": true,
+            "space_id": "space-uuid-here"
+          }
+        ]
+      },
+      "UpdateBetRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Updated bet name",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "description": {
+            "type": "string",
+            "description": "Updated description"
+          },
+          "status_id": {
+            "type": "integer",
+            "description": "Updated status ID"
+          },
+          "priority_id": {
+            "type": "integer",
+            "description": "Updated priority ID"
+          },
+          "icon_id": {
+            "type": "integer",
+            "description": "Updated icon ID"
+          },
+          "target_date": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Updated target date (ISO 8601)"
+          },
+          "owner_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Updated owner ID"
           }
         }
       },
