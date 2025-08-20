@@ -57,6 +57,10 @@
     {
       "name": "People",
       "description": "People management endpoints for contacts and individuals within organizations and workspaces"
+    },
+    {
+      "name": "Initiatives",
+      "description": "API endpoints for managing strategic initiatives with AI-powered planning and tracking"
     }
   ],
   "paths": {
