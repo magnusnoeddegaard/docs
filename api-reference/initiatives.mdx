@@ -1,0 +1,1318 @@
+---
+title: "Initiative Management"
+description: "API endpoints for managing strategic initiatives with AI-powered planning and tracking"
+---
+
+# Initiative Management API
+
+The Initiative Management API provides comprehensive lifecycle management for strategic initiatives, including AI-powered strategic planning through Sindre, owner assignment, status tracking, and meeting connections.
+
+## API Endpoints Overview
+
+<CardGroup cols={2}>
+  <Card title="Core Initiative Operations" icon="target">
+    - `POST /api/initiatives` - Create initiative
+    - `GET /api/initiatives/:initiativeId` - Get initiative details
+    - `PUT /api/initiatives/:initiativeId` - Update initiative
+    - `DELETE /api/initiatives/:initiativeId` - Delete initiative
+  </Card>
+  <Card title="Initiative Retrieval" icon="search">
+    - `GET /api/initiatives/user-initiatives` - Get user's initiatives
+    - `GET /api/initiatives/space-initiatives` - Get space initiatives
+    - `GET /api/initiatives/all-user-initiatives` - Get all user initiatives
+    - `GET /api/initiatives/statuses` - Get available statuses
+  </Card>
+  <Card title="Initiative Updates" icon="pen">
+    - `PATCH /api/initiatives/:initiativeId/status` - Update status
+    - `PATCH /api/initiatives/:initiativeId/owner` - Update owner
+    - `PATCH /api/initiatives/:initiativeId/priority` - Update priority
+    - `PATCH /api/initiatives/:initiativeId/done` - Mark as done
+  </Card>
+  <Card title="Meeting Connections" icon="link">
+    - `POST /api/initiatives/:initiativeId/meetings` - Connect meeting
+    - `DELETE /api/initiatives/:initiativeId/meetings` - Disconnect meeting
+    - `GET /api/initiatives/:initiativeId/meetings` - Get connected meetings
+    - `GET /api/initiatives/unconnected-meetings` - Get unconnected meetings
+  </Card>
+</CardGroup>
+
+## Initiative Object
+
+The initiative object represents a strategic initiative with AI-powered planning capabilities:
+
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "name": "Launch new product line",
+  "description": "Develop and launch our new AI-powered productivity suite targeting enterprise customers",
+  "status_id": 1,
+  "priority_id": 2,
+  "icon_id": 3,
+  "target_date": "2024-12-31",
+  "owner_id": "user-uuid-here",
+  "is_sindre_assigned": false,
+  "created_at": "2024-01-15T10:30:00Z",
+  "updated_at": "2024-01-16T09:15:00Z",
+  "status": {
+    "id": 1,
+    "name": "planning",
+    "description": "Initiative is in planning phase"
+  },
+  "priority": {
+    "id": 2,
+    "name": "high",
+    "description": "High priority initiative"
+  },
+  "icon": {
+    "id": 3,
+    "name": "rocket"
+  },
+  "owner": {
+    "id": "user-uuid-here",
+    "email": "sarah@company.com",
+    "full_name": "Sarah Johnson",
+    "avatar_url": "https://example.com/avatar.jpg"
+  },
+  "space": [
+    {
+      "space_id": "space-uuid-here"
+    }
+  ]
+}
+```
+
+### Initiative Status
+
+Initiative statuses track the lifecycle of strategic initiatives:
+
+<AccordionGroup>
+  <Accordion icon="lightbulb" title="planning">
+    Initiative is in planning and strategy development phase
+  </Accordion>
+  <Accordion icon="play" title="in_progress">
+    Initiative is actively being executed
+  </Accordion>
+  <Accordion icon="pause" title="on_hold">
+    Initiative is temporarily paused
+  </Accordion>
+  <Accordion icon="check-circle" title="completed">
+    Initiative has been successfully completed
+  </Accordion>
+  <Accordion icon="x-circle" title="cancelled">
+    Initiative was cancelled and will not be completed
+  </Accordion>
+</AccordionGroup>
+
+### Priority Levels
+
+Initiative priorities help manage strategic focus and resource allocation:
+
+<CardGroup cols={4}>
+  <Card title="None" icon="circle">
+    No specific priority assigned
+  </Card>
+  <Card title="Low" icon="arrow-down">
+    Long-term strategic initiative
+  </Card>
+  <Card title="Medium" icon="minus">
+    Important strategic objective
+  </Card>
+  <Card title="High" icon="arrow-up">
+    Critical business initiative
+  </Card>
+</CardGroup>
+
+## Get User Initiatives
+
+Retrieve all initiatives assigned to the authenticated user.
+
+<CodeGroup>
+
+```javascript GET /api/initiatives/user-initiatives
+const response = await fetch('https://api.sindre.com/api/initiatives/user-initiatives', {
+  method: 'GET',
+  headers: {
+    'Authorization': `Bearer ${SINDRE_API_KEY}`,
+    'Content-Type': 'application/json'
+  }
+});
+
+const initiatives = await response.json();
+```
+
+```python
+response = requests.get(
+    'https://api.sindre.com/api/initiatives/user-initiatives',
+    headers={
+        'Authorization': f'Bearer {SINDRE_API_KEY}',
+        'Content-Type': 'application/json'
+    }
+)
+
+initiatives = response.json()
+```
+
+```bash
+curl -X GET https://api.sindre.com/api/initiatives/user-initiatives \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json"
+```
+
+</CodeGroup>
+
+### Response
+
+Returns an array of initiative objects directly assigned to the authenticated user.
+
+## Get All User Initiatives
+
+Retrieve all initiatives accessible to the user (both directly assigned and through spaces).
+
+<CodeGroup>
+
+```javascript GET /api/initiatives/all-user-initiatives
+const response = await fetch('https://api.sindre.com/api/initiatives/all-user-initiatives', {
+  method: 'GET',
+  headers: {
+    'Authorization': `Bearer ${SINDRE_API_KEY}`,
+    'Content-Type': 'application/json'
+  }
+});
+
+const initiatives = await response.json();
+```
+
+```python
+response = requests.get(
+    'https://api.sindre.com/api/initiatives/all-user-initiatives',
+    headers={
+        'Authorization': f'Bearer {SINDRE_API_KEY}',
+        'Content-Type': 'application/json'
+    }
+)
+
+initiatives = response.json()
+```
+
+```bash
+curl -X GET https://api.sindre.com/api/initiatives/all-user-initiatives \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json"
+```
+
+</CodeGroup>
+
+### Response
+
+Returns an array of all initiative objects accessible to the user, including initiatives from spaces they belong to.
+
+## Get Space Initiatives
+
+Retrieve all initiatives associated with a specific workspace or space.
+
+<CodeGroup>
+
+```javascript GET /api/initiatives/space-initiatives
+const response = await fetch('https://api.sindre.com/api/initiatives/space-initiatives?spaceId=space-uuid', {
+  method: 'GET',
+  headers: {
+    'Authorization': `Bearer ${SINDRE_API_KEY}`,
+    'Content-Type': 'application/json'
+  }
+});
+
+const initiatives = await response.json();
+```
+
+```python
+response = requests.get(
+    'https://api.sindre.com/api/initiatives/space-initiatives',
+    headers={
+        'Authorization': f'Bearer {SINDRE_API_KEY}',
+        'Content-Type': 'application/json'
+    },
+    params={'spaceId': 'space-uuid'}
+)
+
+initiatives = response.json()
+```
+
+```bash
+curl -X GET "https://api.sindre.com/api/initiatives/space-initiatives?spaceId=space-uuid" \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json"
+```
+
+</CodeGroup>
+
+### Query Parameters
+
+<ParamField query="spaceId" type="string" required>
+  The UUID of the space to retrieve initiatives for
+</ParamField>
+
+## Get Initiative Statuses
+
+Retrieve all available initiative statuses.
+
+<CodeGroup>
+
+```javascript GET /api/initiatives/statuses
+const response = await fetch('https://api.sindre.com/api/initiatives/statuses', {
+  method: 'GET',
+  headers: {
+    'Authorization': `Bearer ${SINDRE_API_KEY}`,
+    'Content-Type': 'application/json'
+  }
+});
+
+const statuses = await response.json();
+```
+
+```python
+response = requests.get(
+    'https://api.sindre.com/api/initiatives/statuses',
+    headers={
+        'Authorization': f'Bearer {SINDRE_API_KEY}',
+        'Content-Type': 'application/json'
+    }
+)
+
+statuses = response.json()
+```
+
+```bash
+curl -X GET https://api.sindre.com/api/initiatives/statuses \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json"
+```
+
+</CodeGroup>
+
+### Response
+
+```json
+[
+  {
+    "id": 1,
+    "name": "planning",
+    "description": "Initiative is in planning and strategy development phase"
+  },
+  {
+    "id": 2,
+    "name": "in_progress",
+    "description": "Initiative is actively being executed"
+  },
+  {
+    "id": 3,
+    "name": "completed",
+    "description": "Initiative has been successfully completed"
+  }
+]
+```
+
+## Get Initiative Icons
+
+Retrieve all available initiative icons.
+
+<CodeGroup>
+
+```javascript GET /api/initiatives/icons
+const response = await fetch('https://api.sindre.com/api/initiatives/icons', {
+  method: 'GET',
+  headers: {
+    'Authorization': `Bearer ${SINDRE_API_KEY}`,
+    'Content-Type': 'application/json'
+  }
+});
+
+const icons = await response.json();
+```
+
+```python
+response = requests.get(
+    'https://api.sindre.com/api/initiatives/icons',
+    headers={
+        'Authorization': f'Bearer {SINDRE_API_KEY}',
+        'Content-Type': 'application/json'
+    }
+)
+
+icons = response.json()
+```
+
+```bash
+curl -X GET https://api.sindre.com/api/initiatives/icons \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json"
+```
+
+</CodeGroup>
+
+### Response
+
+```json
+[
+  {
+    "id": 1,
+    "name": "target"
+  },
+  {
+    "id": 2,
+    "name": "rocket"
+  },
+  {
+    "id": 3,
+    "name": "star"
+  }
+]
+```
+
+## Get Initiative Priorities
+
+Retrieve all available initiative priorities.
+
+<CodeGroup>
+
+```javascript GET /api/initiatives/priorities
+const response = await fetch('https://api.sindre.com/api/initiatives/priorities', {
+  method: 'GET',
+  headers: {
+    'Authorization': `Bearer ${SINDRE_API_KEY}`,
+    'Content-Type': 'application/json'
+  }
+});
+
+const priorities = await response.json();
+```
+
+```python
+response = requests.get(
+    'https://api.sindre.com/api/initiatives/priorities',
+    headers={
+        'Authorization': f'Bearer {SINDRE_API_KEY}',
+        'Content-Type': 'application/json'
+    }
+)
+
+priorities = response.json()
+```
+
+```bash
+curl -X GET https://api.sindre.com/api/initiatives/priorities \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json"
+```
+
+</CodeGroup>
+
+### Response
+
+```json
+[
+  {
+    "id": 1,
+    "name": "none"
+  },
+  {
+    "id": 2,
+    "name": "low"
+  },
+  {
+    "id": 3,
+    "name": "medium"
+  },
+  {
+    "id": 4,
+    "name": "high"
+  }
+]
+```
+
+## Create Initiative
+
+Create a new strategic initiative. Initiatives can be assigned to users or spaces.
+
+<CodeGroup>
+
+```javascript POST /api/initiatives
+const initiative = await fetch('https://api.sindre.com/api/initiatives', {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${SINDRE_API_KEY}`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    name: 'Launch new product line',
+    description: 'Develop and launch our new AI-powered productivity suite',
+    priority_id: 2,
+    icon_id: 3,
+    target_date: '2024-12-31',
+    user_id: 'user-uuid-here',
+    space_id: 'space-uuid-here'
+  })
+});
+
+const initiativeData = await initiative.json();
+```
+
+```python
+import requests
+
+response = requests.post(
+    'https://api.sindre.com/api/initiatives',
+    headers={
+        'Authorization': f'Bearer {SINDRE_API_KEY}',
+        'Content-Type': 'application/json'
+    },
+    json={
+        'name': 'Launch new product line',
+        'description': 'Develop and launch our new AI-powered productivity suite',
+        'priority_id': 2,
+        'icon_id': 3,
+        'target_date': '2024-12-31',
+        'user_id': 'user-uuid-here',
+        'space_id': 'space-uuid-here'
+    }
+)
+
+initiative = response.json()
+```
+
+```bash
+curl -X POST https://api.sindre.com/api/initiatives \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Launch new product line",
+    "description": "Develop and launch our new AI-powered productivity suite",
+    "priority_id": 2,
+    "icon_id": 3,
+    "target_date": "2024-12-31",
+    "user_id": "user-uuid-here",
+    "space_id": "space-uuid-here"
+  }'
+```
+
+</CodeGroup>
+
+### Request Body
+
+<ParamField body="name" type="string" required>
+  Clear, descriptive initiative name
+</ParamField>
+
+<ParamField body="description" type="string">
+  Detailed description of the strategic initiative
+</ParamField>
+
+<ParamField body="status_id" type="string" default="1">
+  Initiative status ID (defaults to planning)
+</ParamField>
+
+<ParamField body="priority_id" type="string" default="1">
+  Initiative priority ID: 1=none, 2=low, 3=medium, 4=high
+</ParamField>
+
+<ParamField body="icon_id" type="string" default="1">
+  Initiative icon ID for visual representation
+</ParamField>
+
+<ParamField body="target_date" type="string">
+  Target completion date in YYYY-MM-DD format (defaults to 30 days from creation)
+</ParamField>
+
+<ParamField body="user_id" type="string">
+  User ID to assign this initiative to (for personal initiatives)
+</ParamField>
+
+<ParamField body="space_id" type="string">
+  Space ID to assign this initiative to (for team initiatives)
+</ParamField>
+
+### Response
+
+Returns the created initiative object with status `201 Created`.
+
+## Get Initiative
+
+Retrieve a specific initiative by its ID with complete details and related information.
+
+<CodeGroup>
+
+```javascript GET /api/initiatives/:id
+const response = await fetch(`https://api.sindre.com/api/initiatives/${initiativeId}`, {
+  method: 'GET',
+  headers: {
+    'Authorization': `Bearer ${SINDRE_API_KEY}`,
+    'Content-Type': 'application/json'
+  }
+});
+
+const initiative = await response.json();
+```
+
+```python
+response = requests.get(
+    f'https://api.sindre.com/api/initiatives/{initiative_id}',
+    headers={
+        'Authorization': f'Bearer {SINDRE_API_KEY}',
+        'Content-Type': 'application/json'
+    }
+)
+
+initiative = response.json()
+```
+
+```bash
+curl -X GET https://api.sindre.com/api/initiatives/550e8400-e29b-41d4-a716-446655440000 \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json"
+```
+
+</CodeGroup>
+
+### Path Parameters
+
+<ParamField path="id" type="string" required>
+  The initiative ID to retrieve
+</ParamField>
+
+### Response
+
+Returns the complete initiative object with all related information including owner details, status, priority, and icon information.
+
+## Update Initiative Status
+
+Update the status of a specific initiative using its status ID.
+
+<CodeGroup>
+
+```javascript PATCH /api/initiatives/:initiativeId/status
+const response = await fetch(`https://api.sindre.com/api/initiatives/${initiativeId}/status`, {
+  method: 'PATCH',
+  headers: {
+    'Authorization': `Bearer ${SINDRE_API_KEY}`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    statusId: "2"
+  })
+});
+
+const updatedInitiative = await response.json();
+```
+
+```python
+response = requests.patch(
+    f'https://api.sindre.com/api/initiatives/{initiative_id}/status',
+    headers={
+        'Authorization': f'Bearer {SINDRE_API_KEY}',
+        'Content-Type': 'application/json'
+    },
+    json={
+        'statusId': '2'
+    }
+)
+
+initiative = response.json()
+```
+
+```bash
+curl -X PATCH https://api.sindre.com/api/initiatives/550e8400-e29b-41d4-a716-446655440000/status \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "statusId": "2"
+  }'
+```
+
+</CodeGroup>
+
+### Request Body
+
+<ParamField body="statusId" type="string" required>
+  The ID of the status to set
+</ParamField>
+
+## Update Initiative Owner
+
+Update the owner of a specific initiative. Supports assigning to users, Sindre AI, or unassigning.
+
+<CodeGroup>
+
+```javascript PATCH /api/initiatives/:initiativeId/owner
+const response = await fetch(`https://api.sindre.com/api/initiatives/${initiativeId}/owner`, {
+  method: 'PATCH',
+  headers: {
+    'Authorization': `Bearer ${SINDRE_API_KEY}`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    ownerId: "sindre"
+  })
+});
+
+const updatedInitiative = await response.json();
+```
+
+```python
+response = requests.patch(
+    f'https://api.sindre.com/api/initiatives/{initiative_id}/owner',
+    headers={
+        'Authorization': f'Bearer {SINDRE_API_KEY}',
+        'Content-Type': 'application/json'
+    },
+    json={
+        'ownerId': 'sindre'
+    }
+)
+
+initiative = response.json()
+```
+
+```bash
+curl -X PATCH https://api.sindre.com/api/initiatives/550e8400-e29b-41d4-a716-446655440000/owner \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "ownerId": "sindre"
+  }'
+```
+
+</CodeGroup>
+
+### Request Body
+
+<ParamField body="ownerId" type="string" required>
+  Owner ID to assign the initiative to. Use "sindre" for Sindre AI assignment, "null" for unassigned, or a user UUID
+</ParamField>
+
+<Note>
+When assigning an initiative to Sindre ("sindre"), the AI assistant will automatically start a background strategic planning conversation to help develop the initiative.
+</Note>
+
+## Update Initiative Priority
+
+Update the priority of a specific initiative using its priority ID.
+
+<CodeGroup>
+
+```javascript PATCH /api/initiatives/:initiativeId/priority
+const response = await fetch(`https://api.sindre.com/api/initiatives/${initiativeId}/priority`, {
+  method: 'PATCH',
+  headers: {
+    'Authorization': `Bearer ${SINDRE_API_KEY}`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    priorityId: "3"
+  })
+});
+
+const updatedInitiative = await response.json();
+```
+
+```python
+response = requests.patch(
+    f'https://api.sindre.com/api/initiatives/{initiative_id}/priority',
+    headers={
+        'Authorization': f'Bearer {SINDRE_API_KEY}',
+        'Content-Type': 'application/json'
+    },
+    json={
+        'priorityId': '3'
+    }
+)
+
+initiative = response.json()
+```
+
+```bash
+curl -X PATCH https://api.sindre.com/api/initiatives/550e8400-e29b-41d4-a716-446655440000/priority \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "priorityId": "3"
+  }'
+```
+
+</CodeGroup>
+
+### Request Body
+
+<ParamField body="priorityId" type="string" required>
+  The ID of the priority to set
+</ParamField>
+
+## Mark Initiative as Done
+
+Quickly mark an initiative as completed by setting its status to "completed".
+
+<CodeGroup>
+
+```javascript PATCH /api/initiatives/:initiativeId/done
+const response = await fetch(`https://api.sindre.com/api/initiatives/${initiativeId}/done`, {
+  method: 'PATCH',
+  headers: {
+    'Authorization': `Bearer ${SINDRE_API_KEY}`,
+    'Content-Type': 'application/json'
+  }
+});
+
+const updatedInitiative = await response.json();
+```
+
+```python
+response = requests.patch(
+    f'https://api.sindre.com/api/initiatives/{initiative_id}/done',
+    headers={
+        'Authorization': f'Bearer {SINDRE_API_KEY}',
+        'Content-Type': 'application/json'
+    }
+)
+
+initiative = response.json()
+```
+
+```bash
+curl -X PATCH https://api.sindre.com/api/initiatives/550e8400-e29b-41d4-a716-446655440000/done \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json"
+```
+
+</CodeGroup>
+
+## Update Initiative (Full)
+
+Update multiple fields of an initiative at once.
+
+<CodeGroup>
+
+```javascript PUT /api/initiatives/:id
+const response = await fetch(`https://api.sindre.com/api/initiatives/${initiativeId}`, {
+  method: 'PUT',
+  headers: {
+    'Authorization': `Bearer ${SINDRE_API_KEY}`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    name: 'Updated initiative name',
+    description: 'Updated description with new strategic focus',
+    priority_id: 4,
+    target_date: '2024-10-31'
+  })
+});
+
+const updatedInitiative = await response.json();
+```
+
+```python
+response = requests.put(
+    f'https://api.sindre.com/api/initiatives/{initiative_id}',
+    headers={
+        'Authorization': f'Bearer {SINDRE_API_KEY}',
+        'Content-Type': 'application/json'
+    },
+    json={
+        'name': 'Updated initiative name',
+        'description': 'Updated description with new strategic focus',
+        'priority_id': 4,
+        'target_date': '2024-10-31'
+    }
+)
+
+initiative = response.json()
+```
+
+```bash
+curl -X PUT https://api.sindre.com/api/initiatives/550e8400-e29b-41d4-a716-446655440000 \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Updated initiative name",
+    "description": "Updated description with new strategic focus",
+    "priority_id": 4,
+    "target_date": "2024-10-31"
+  }'
+```
+
+</CodeGroup>
+
+### Request Body
+
+<ParamField body="name" type="string">
+  Updated initiative name
+</ParamField>
+
+<ParamField body="description" type="string">
+  Updated initiative description
+</ParamField>
+
+<ParamField body="status_id" type="string">
+  Updated status ID
+</ParamField>
+
+<ParamField body="priority_id" type="string">
+  Updated priority ID
+</ParamField>
+
+<ParamField body="icon_id" type="string">
+  Updated icon ID
+</ParamField>
+
+<ParamField body="target_date" type="string">
+  Updated target completion date (YYYY-MM-DD format)
+</ParamField>
+
+## Delete Initiative
+
+Permanently delete an initiative. This action cannot be undone.
+
+<CodeGroup>
+
+```javascript DELETE /api/initiatives/:id
+const response = await fetch(`https://api.sindre.com/api/initiatives/${initiativeId}`, {
+  method: 'DELETE',
+  headers: {
+    'Authorization': `Bearer ${SINDRE_API_KEY}`,
+    'Content-Type': 'application/json'
+  }
+});
+
+// Returns 200 on success
+```
+
+```python
+response = requests.delete(
+    f'https://api.sindre.com/api/initiatives/{initiative_id}',
+    headers={
+        'Authorization': f'Bearer {SINDRE_API_KEY}',
+        'Content-Type': 'application/json'
+    }
+)
+
+# Returns 200 on success
+```
+
+```bash
+curl -X DELETE https://api.sindre.com/api/initiatives/550e8400-e29b-41d4-a716-446655440000 \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json"
+```
+
+</CodeGroup>
+
+<Warning>
+  **Permanent deletion**: This action cannot be undone. The initiative and all associated data will be permanently removed from the database.
+</Warning>
+
+## Delete Multiple Initiatives
+
+Delete multiple initiatives at once.
+
+<CodeGroup>
+
+```javascript DELETE /api/initiatives
+const response = await fetch('https://api.sindre.com/api/initiatives', {
+  method: 'DELETE',
+  headers: {
+    'Authorization': `Bearer ${SINDRE_API_KEY}`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    initiativeIds: ['initiative-1-uuid', 'initiative-2-uuid']
+  })
+});
+
+const result = await response.json();
+```
+
+```python
+response = requests.delete(
+    'https://api.sindre.com/api/initiatives',
+    headers={
+        'Authorization': f'Bearer {SINDRE_API_KEY}',
+        'Content-Type': 'application/json'
+    },
+    json={
+        'initiativeIds': ['initiative-1-uuid', 'initiative-2-uuid']
+    }
+)
+
+result = response.json()
+```
+
+```bash
+curl -X DELETE https://api.sindre.com/api/initiatives \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "initiativeIds": ["initiative-1-uuid", "initiative-2-uuid"]
+  }'
+```
+
+</CodeGroup>
+
+### Request Body
+
+<ParamField body="initiativeIds" type="array" required>
+  Array of initiative UUIDs to delete
+</ParamField>
+
+## Meeting Connections
+
+### Connect Meeting to Initiative
+
+Connect a meeting (via bot ID) to an initiative for tracking and context.
+
+<CodeGroup>
+
+```javascript POST /api/initiatives/:initiativeId/meetings
+const response = await fetch(`https://api.sindre.com/api/initiatives/${initiativeId}/meetings`, {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${SINDRE_API_KEY}`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    botId: 'bot-uuid-from-meeting'
+  })
+});
+
+const result = await response.json();
+```
+
+```python
+response = requests.post(
+    f'https://api.sindre.com/api/initiatives/{initiative_id}/meetings',
+    headers={
+        'Authorization': f'Bearer {SINDRE_API_KEY}',
+        'Content-Type': 'application/json'
+    },
+    json={
+        'botId': 'bot-uuid-from-meeting'
+    }
+)
+
+result = response.json()
+```
+
+```bash
+curl -X POST https://api.sindre.com/api/initiatives/550e8400-e29b-41d4-a716-446655440000/meetings \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "botId": "bot-uuid-from-meeting"
+  }'
+```
+
+</CodeGroup>
+
+### Request Body
+
+<ParamField body="botId" type="string" required>
+  The bot ID from the meeting to connect to this initiative
+</ParamField>
+
+### Disconnect Meeting from Initiative
+
+Remove the connection between a meeting and an initiative.
+
+<CodeGroup>
+
+```javascript DELETE /api/initiatives/:initiativeId/meetings
+const response = await fetch(`https://api.sindre.com/api/initiatives/${initiativeId}/meetings`, {
+  method: 'DELETE',
+  headers: {
+    'Authorization': `Bearer ${SINDRE_API_KEY}`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    botId: 'bot-uuid-from-meeting'
+  })
+});
+
+const result = await response.json();
+```
+
+```python
+response = requests.delete(
+    f'https://api.sindre.com/api/initiatives/{initiative_id}/meetings',
+    headers={
+        'Authorization': f'Bearer {SINDRE_API_KEY}',
+        'Content-Type': 'application/json'
+    },
+    json={
+        'botId': 'bot-uuid-from-meeting'
+    }
+)
+
+result = response.json()
+```
+
+```bash
+curl -X DELETE https://api.sindre.com/api/initiatives/550e8400-e29b-41d4-a716-446655440000/meetings \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "botId": "bot-uuid-from-meeting"
+  }'
+```
+
+</CodeGroup>
+
+### Get Initiative Meetings
+
+Retrieve all meetings connected to a specific initiative.
+
+<CodeGroup>
+
+```javascript GET /api/initiatives/:initiativeId/meetings
+const response = await fetch(`https://api.sindre.com/api/initiatives/${initiativeId}/meetings`, {
+  method: 'GET',
+  headers: {
+    'Authorization': `Bearer ${SINDRE_API_KEY}`,
+    'Content-Type': 'application/json'
+  }
+});
+
+const meetings = await response.json();
+```
+
+```python
+response = requests.get(
+    f'https://api.sindre.com/api/initiatives/{initiative_id}/meetings',
+    headers={
+        'Authorization': f'Bearer {SINDRE_API_KEY}',
+        'Content-Type': 'application/json'
+    }
+)
+
+meetings = response.json()
+```
+
+```bash
+curl -X GET https://api.sindre.com/api/initiatives/550e8400-e29b-41d4-a716-446655440000/meetings \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json"
+```
+
+</CodeGroup>
+
+### Get Unconnected Meetings
+
+Retrieve meetings that are available for connection to initiatives.
+
+<CodeGroup>
+
+```javascript GET /api/initiatives/unconnected-meetings
+const response = await fetch('https://api.sindre.com/api/initiatives/unconnected-meetings', {
+  method: 'GET',
+  headers: {
+    'Authorization': `Bearer ${SINDRE_API_KEY}`,
+    'Content-Type': 'application/json'
+  }
+});
+
+const meetings = await response.json();
+```
+
+```python
+response = requests.get(
+    'https://api.sindre.com/api/initiatives/unconnected-meetings',
+    headers={
+        'Authorization': f'Bearer {SINDRE_API_KEY}',
+        'Content-Type': 'application/json'
+    }
+)
+
+meetings = response.json()
+```
+
+```bash
+curl -X GET https://api.sindre.com/api/initiatives/unconnected-meetings \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json"
+```
+
+</CodeGroup>
+
+## Add Task to Initiative
+
+Connect a task to an initiative for strategic tracking.
+
+<CodeGroup>
+
+```javascript POST /api/initiatives/:initiativeId/tasks
+const response = await fetch(`https://api.sindre.com/api/initiatives/${initiativeId}/tasks`, {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${SINDRE_API_KEY}`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    taskId: 'task-uuid-to-connect'
+  })
+});
+
+const result = await response.json();
+```
+
+```python
+response = requests.post(
+    f'https://api.sindre.com/api/initiatives/{initiative_id}/tasks',
+    headers={
+        'Authorization': f'Bearer {SINDRE_API_KEY}',
+        'Content-Type': 'application/json'
+    },
+    json={
+        'taskId': 'task-uuid-to-connect'
+    }
+)
+
+result = response.json()
+```
+
+```bash
+curl -X POST https://api.sindre.com/api/initiatives/550e8400-e29b-41d4-a716-446655440000/tasks \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "taskId": "task-uuid-to-connect"
+  }'
+```
+
+</CodeGroup>
+
+### Request Body
+
+<ParamField body="taskId" type="string" required>
+  The UUID of the task to connect to this initiative
+</ParamField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion icon="warning" title="400 Bad Request">
+    ```json
+    {
+      "error": "Invalid initiative: must be a non-empty object."
+    }
+    ```
+    
+    ```json
+    {
+      "error": "Invalid initiativeId: must be a non-empty string."
+    }
+    ```
+    
+    ```json
+    {
+      "error": "Invalid initiative: must have a user_id or space_id."
+    }
+    ```
+  </Accordion>
+  <Accordion icon="search" title="404 Not Found">
+    ```json
+    {
+      "error": "Initiative not found"
+    }
+    ```
+    
+    ```json
+    {
+      "error": "Initiatives not found"
+    }
+    ```
+    
+    ```json
+    {
+      "error": "Meeting connection not found"
+    }
+    ```
+  </Accordion>
+  <Accordion icon="conflict" title="409 Conflict">
+    ```json
+    {
+      "error": "Meeting is already connected to this initiative"
+    }
+    ```
+  </Accordion>
+  <Accordion icon="server" title="500 Internal Server Error">
+    ```json
+    {
+      "error": "Error creating initiative: Database constraint violation"
+    }
+    ```
+    
+    ```json
+    {
+      "error": "Error fetching user initiatives"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## AI-Powered Strategic Planning
+
+When an initiative is assigned to Sindre (using `ownerId: "sindre"`), the AI assistant automatically:
+
+1. **Moves the initiative to "In Progress" status**
+2. **Starts a background strategic planning conversation** 
+3. **Provides strategic analysis including**:
+   - Strategic breakdown of the initiative
+   - Key milestones and success metrics
+   - Potential risks and mitigation strategies
+   - Stakeholder identification and engagement approach
+   - High-level implementation roadmap
+   - Resource requirements and dependencies
+
+<Note>
+The AI focuses on strategic planning and coordination rather than detailed tactical execution, making it ideal for high-level initiative development.
+</Note>
+
+## Best Practices
+
+<Tabs>
+  <Tab title="Initiative Creation">
+    - Use clear, strategic initiative names that reflect business outcomes
+    - Include detailed descriptions with success criteria and impact
+    - Set realistic target dates aligned with business planning cycles
+    - Assign appropriate priorities based on strategic importance
+    - Choose meaningful icons for easy visual identification
+  </Tab>
+  <Tab title="Initiative Management">
+    - Update initiative status regularly to maintain visibility
+    - Connect related meetings to maintain context and history
+    - Use Sindre AI assignment for strategic planning and analysis
+    - Review and adjust priorities as business needs change
+    - Track progress through connected tasks and meetings
+  </Tab>
+  <Tab title="Strategic Planning">
+    - Leverage Sindre AI for comprehensive strategic analysis
+    - Connect initiatives to relevant meetings for context
+    - Break down large initiatives into manageable tasks
+    - Regularly review initiative progress and adjust strategy
+    - Use meeting connections to track strategic discussions
+  </Tab>
+</Tabs>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="Task Management"
+    icon="tasks"
+    href="/api-reference/tasks"
+  >
+    Connect tasks to initiatives for execution tracking.
+  </Card>
+  <Card
+    title="Meeting Management"
+    icon="calendar"
+    href="/api-reference/meetings"
+  >
+    Connect meetings to initiatives for strategic context.
+  </Card>
+</CardGroup>

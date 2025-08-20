@@ -44,7 +44,7 @@
     },
     {
       "name": "Bets",
-      "description": "Bet management endpoints for strategic initiatives and tracking"
+      "description": "Bet management endpoints for strategic goals"
     },
     {
       "name": "Insights",
@@ -4093,6 +4093,1018 @@
           }
         }
       }
+    },
+    "/api/initiatives": {
+      "post": {
+        "summary": "Create Initiative",
+        "description": "Create a new strategic initiative. If user_id or space_id is provided, the initiative will be assigned accordingly.",
+        "operationId": "createInitiative",
+        "tags": ["Initiatives"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateInitiativeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Initiative created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Initiative"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - Invalid initiative data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete Multiple Initiatives",
+        "description": "Delete multiple initiatives at once using their IDs.",
+        "operationId": "deleteMultipleInitiatives",
+        "tags": ["Initiatives"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteMultipleInitiativesRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Initiatives deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Initiatives deleted successfully"
+                    },
+                    "deletedCount": {
+                      "type": "integer",
+                      "example": 3
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - Invalid initiative IDs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Initiatives not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/initiatives/{id}": {
+      "get": {
+        "summary": "Get Initiative",
+        "description": "Retrieve a specific initiative by its ID with complete details and related information.",
+        "operationId": "getInitiative",
+        "tags": ["Initiatives"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The initiative ID to retrieve",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Initiative retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Initiative"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Initiative not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Update Initiative",
+        "description": "Update multiple fields of an initiative at once.",
+        "operationId": "updateInitiative",
+        "tags": ["Initiatives"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The initiative ID to update",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateInitiativeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Initiative updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Initiative"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - Invalid update data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Initiative not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete Initiative",
+        "description": "Permanently delete an initiative. This action cannot be undone.",
+        "operationId": "deleteInitiative",
+        "tags": ["Initiatives"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The initiative ID to delete",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Initiative deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Initiative deleted successfully"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Initiative not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/initiatives/user-initiatives": {
+      "get": {
+        "summary": "Get User Initiatives",
+        "description": "Retrieve all initiatives assigned to the authenticated user.",
+        "operationId": "getUserInitiatives",
+        "tags": ["Initiatives"],
+        "responses": {
+          "200": {
+            "description": "User initiatives retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Initiative"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/initiatives/all-user-initiatives": {
+      "get": {
+        "summary": "Get All User Initiatives",
+        "description": "Retrieve all initiatives accessible to the user (both directly assigned and through spaces).",
+        "operationId": "getAllUserInitiatives",
+        "tags": ["Initiatives"],
+        "responses": {
+          "200": {
+            "description": "All user initiatives retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Initiative"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/initiatives/space-initiatives": {
+      "get": {
+        "summary": "Get Space Initiatives",
+        "description": "Retrieve all initiatives associated with a specific workspace or space.",
+        "operationId": "getSpaceInitiatives",
+        "tags": ["Initiatives"],
+        "parameters": [
+          {
+            "name": "spaceId",
+            "in": "query",
+            "description": "The UUID of the space to retrieve initiatives for",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Space initiatives retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Initiative"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - Invalid space ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/initiatives/statuses": {
+      "get": {
+        "summary": "Get Initiative Statuses",
+        "description": "Retrieve all available initiative statuses.",
+        "operationId": "getInitiativeStatuses",
+        "tags": ["Initiatives"],
+        "responses": {
+          "200": {
+            "description": "Initiative statuses retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/InitiativeStatus"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/initiatives/icons": {
+      "get": {
+        "summary": "Get Initiative Icons",
+        "description": "Retrieve all available initiative icons.",
+        "operationId": "getInitiativeIcons",
+        "tags": ["Initiatives"],
+        "responses": {
+          "200": {
+            "description": "Initiative icons retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/InitiativeIcon"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/initiatives/priorities": {
+      "get": {
+        "summary": "Get Initiative Priorities",
+        "description": "Retrieve all available initiative priorities.",
+        "operationId": "getInitiativePriorities",
+        "tags": ["Initiatives"],
+        "responses": {
+          "200": {
+            "description": "Initiative priorities retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/InitiativePriority"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/initiatives/{id}/status": {
+      "patch": {
+        "summary": "Update Initiative Status",
+        "description": "Update the status of a specific initiative using its status ID.",
+        "operationId": "updateInitiativeStatus",
+        "tags": ["Initiatives"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The initiative ID to update",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateInitiativeStatusRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Initiative status updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Initiative"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - Invalid status ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Initiative not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/initiatives/{id}/owner": {
+      "patch": {
+        "summary": "Update Initiative Owner",
+        "description": "Update the owner of a specific initiative. Supports assigning to users, Sindre AI, or unassigning.",
+        "operationId": "updateInitiativeOwner",
+        "tags": ["Initiatives"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The initiative ID to update",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateInitiativeOwnerRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Initiative owner updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Initiative"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - Invalid owner ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Initiative not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/initiatives/{id}/priority": {
+      "patch": {
+        "summary": "Update Initiative Priority",
+        "description": "Update the priority of a specific initiative using its priority ID.",
+        "operationId": "updateInitiativePriority",
+        "tags": ["Initiatives"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The initiative ID to update",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateInitiativePriorityRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Initiative priority updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Initiative"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - Invalid priority ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Initiative not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/initiatives/{id}/done": {
+      "patch": {
+        "summary": "Mark Initiative as Done",
+        "description": "Quickly mark an initiative as completed by setting its status to 'completed'.",
+        "operationId": "markInitiativeAsDone",
+        "tags": ["Initiatives"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The initiative ID to mark as done",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Initiative marked as done successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Initiative"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Initiative not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/initiatives/{id}/meetings": {
+      "post": {
+        "summary": "Connect Meeting to Initiative",
+        "description": "Connect a meeting (via bot ID) to an initiative for tracking and context.",
+        "operationId": "connectMeetingToInitiative",
+        "tags": ["Initiatives"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The initiative ID to connect the meeting to",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConnectMeetingToInitiativeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Meeting connected successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Meeting connected to initiative successfully"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - Invalid bot ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Initiative not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Meeting is already connected to this initiative",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "Get Initiative Meetings",
+        "description": "Retrieve all meetings connected to a specific initiative.",
+        "operationId": "getInitiativeMeetings",
+        "tags": ["Initiatives"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The initiative ID to get meetings for",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Initiative meetings retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Meeting"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Initiative not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Disconnect Meeting from Initiative",
+        "description": "Remove the connection between a meeting and an initiative.",
+        "operationId": "disconnectMeetingFromInitiative",
+        "tags": ["Initiatives"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The initiative ID to disconnect the meeting from",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConnectMeetingToInitiativeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Meeting disconnected successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Meeting disconnected from initiative successfully"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Initiative or meeting connection not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/initiatives/{id}/tasks": {
+      "post": {
+        "summary": "Add Task to Initiative",
+        "description": "Connect a task to an initiative for strategic tracking.",
+        "operationId": "addTaskToInitiative",
+        "tags": ["Initiatives"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The initiative ID to connect the task to",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddTaskToInitiativeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Task connected successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Task connected to initiative successfully"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - Invalid task ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Initiative or task not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/initiatives/unconnected-meetings": {
+      "get": {
+        "summary": "Get Unconnected Meetings",
+        "description": "Retrieve meetings that are available for connection to initiatives.",
+        "operationId": "getUnconnectedMeetings",
+        "tags": ["Initiatives"],
+        "responses": {
+          "200": {
+            "description": "Unconnected meetings retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Meeting"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -4777,6 +5789,304 @@
             "description": "Updated owner ID"
           }
         }
+      },
+      "Initiative": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique initiative identifier"
+          },
+          "name": {
+            "type": "string",
+            "description": "Initiative name/title"
+          },
+          "description": {
+            "type": "string",
+            "description": "Detailed description of the strategic initiative",
+            "nullable": true
+          },
+          "status_id": {
+            "type": "integer",
+            "description": "Reference to the initiative status"
+          },
+          "priority_id": {
+            "type": "integer",
+            "description": "Reference to the initiative priority"
+          },
+          "icon_id": {
+            "type": "integer",
+            "description": "Reference to the initiative icon"
+          },
+          "target_date": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Target completion date in ISO 8601 format",
+            "nullable": true
+          },
+          "owner_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "UUID of the user who owns this initiative",
+            "nullable": true
+          },
+          "is_sindre_assigned": {
+            "type": "boolean",
+            "description": "Whether the initiative is assigned to Sindre AI for strategic planning"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the initiative was created"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the initiative was last updated"
+          },
+          "status": {
+            "$ref": "#/components/schemas/InitiativeStatus"
+          },
+          "priority": {
+            "$ref": "#/components/schemas/InitiativePriority"
+          },
+          "icon": {
+            "$ref": "#/components/schemas/InitiativeIcon"
+          },
+          "owner": {
+            "type": "object",
+            "nullable": true,
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "email": {
+                "type": "string",
+                "format": "email"
+              },
+              "full_name": {
+                "type": "string"
+              },
+              "avatar_url": {
+                "type": "string",
+                "format": "uri",
+                "nullable": true
+              }
+            }
+          },
+          "space": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "space_id": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          }
+        },
+        "required": ["id", "name", "status_id", "priority_id", "icon_id", "is_sindre_assigned", "created_at", "updated_at"]
+      },
+      "InitiativeStatus": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Status ID"
+          },
+          "name": {
+            "type": "string",
+            "description": "Status name",
+            "enum": ["planning", "in_progress", "on_hold", "completed", "cancelled"]
+          },
+          "description": {
+            "type": "string",
+            "description": "Status description"
+          }
+        },
+        "required": ["id", "name"]
+      },
+      "InitiativePriority": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Priority ID"
+          },
+          "name": {
+            "type": "string",
+            "description": "Priority name",
+            "enum": ["none", "low", "medium", "high"]
+          },
+          "description": {
+            "type": "string",
+            "description": "Priority description",
+            "nullable": true
+          }
+        },
+        "required": ["id", "name"]
+      },
+      "InitiativeIcon": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Icon ID"
+          },
+          "name": {
+            "type": "string",
+            "description": "Icon name (e.g., target, rocket, star)"
+          }
+        },
+        "required": ["id", "name"]
+      },
+      "CreateInitiativeRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Clear, descriptive initiative name",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "description": {
+            "type": "string",
+            "description": "Detailed description of the strategic initiative"
+          },
+          "status_id": {
+            "type": "integer",
+            "description": "Initiative status ID (defaults to planning)",
+            "default": 1
+          },
+          "priority_id": {
+            "type": "integer",
+            "description": "Initiative priority ID: 1=none, 2=low, 3=medium, 4=high",
+            "default": 1
+          },
+          "icon_id": {
+            "type": "integer",
+            "description": "Initiative icon ID for visual representation",
+            "default": 1
+          },
+          "target_date": {
+            "type": "string",
+            "format": "date",
+            "description": "Target completion date in YYYY-MM-DD format"
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "User ID to assign this initiative to (for personal initiatives)"
+          },
+          "space_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Space ID to assign this initiative to (for team initiatives)"
+          }
+        },
+        "required": ["name"]
+      },
+      "UpdateInitiativeRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Updated initiative name",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "description": {
+            "type": "string",
+            "description": "Updated initiative description"
+          },
+          "status_id": {
+            "type": "integer",
+            "description": "Updated status ID"
+          },
+          "priority_id": {
+            "type": "integer",
+            "description": "Updated priority ID"
+          },
+          "icon_id": {
+            "type": "integer",
+            "description": "Updated icon ID"
+          },
+          "target_date": {
+            "type": "string",
+            "format": "date",
+            "description": "Updated target completion date (YYYY-MM-DD format)"
+          }
+        }
+      },
+      "UpdateInitiativeStatusRequest": {
+        "type": "object",
+        "properties": {
+          "statusId": {
+            "type": "string",
+            "description": "The ID of the status to set"
+          }
+        },
+        "required": ["statusId"]
+      },
+      "UpdateInitiativeOwnerRequest": {
+        "type": "object",
+        "properties": {
+          "ownerId": {
+            "type": "string",
+            "description": "Owner ID to assign the initiative to. Use 'sindre' for Sindre AI assignment, 'null' for unassigned, or a user UUID"
+          }
+        },
+        "required": ["ownerId"]
+      },
+      "UpdateInitiativePriorityRequest": {
+        "type": "object",
+        "properties": {
+          "priorityId": {
+            "type": "string",
+            "description": "The ID of the priority to set"
+          }
+        },
+        "required": ["priorityId"]
+      },
+      "DeleteMultipleInitiativesRequest": {
+        "type": "object",
+        "properties": {
+          "initiativeIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Array of initiative UUIDs to delete",
+            "minItems": 1
+          }
+        },
+        "required": ["initiativeIds"]
+      },
+      "ConnectMeetingToInitiativeRequest": {
+        "type": "object",
+        "properties": {
+          "botId": {
+            "type": "string",
+            "description": "The bot ID from the meeting to connect to this initiative"
+          }
+        },
+        "required": ["botId"]
+      },
+      "AddTaskToInitiativeRequest": {
+        "type": "object",
+        "properties": {
+          "taskId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The UUID of the task to connect to this initiative"
+          }
+        },
+        "required": ["taskId"]
       },
       "TaskComment": {
         "type": "object",
